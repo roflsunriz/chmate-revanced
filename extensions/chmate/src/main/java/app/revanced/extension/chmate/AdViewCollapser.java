@@ -85,9 +85,11 @@ public final class AdViewCollapser implements Application.ActivityLifecycleCallb
     private static boolean isAdvertisementView(View view) {
         String className = view.getClass().getName().toLowerCase(Locale.ROOT);
         if (className.contains(".google.android.gms.ads.")
+                || className.contains(".google.android.gms.internal.ads.")
                 || className.contains(".amazon.device.ads.")
                 || className.contains(".applovin.")
                 || className.contains(".unity3d.ads.")
+                || className.contains(".net.nend.android.")
                 || className.endsWith(".adview")
                 || className.contains("bannerad")) {
             return true;

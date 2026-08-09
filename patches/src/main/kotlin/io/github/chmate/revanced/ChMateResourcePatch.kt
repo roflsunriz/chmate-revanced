@@ -1,7 +1,9 @@
 package io.github.chmate.revanced
 
 import app.revanced.patcher.patch.PatchException
+import app.revanced.patcher.patch.ResourcePatchContext
 import app.revanced.patcher.patch.resourcePatch
+import java.io.File
 import org.w3c.dom.Element
 
 private const val SETTINGS_ACTIVITY = "app.revanced.extension.chmate.SettingsActivity"
@@ -14,11 +16,14 @@ internal val chMateResourcePatch = resourcePatch {
     compatibleWith("jp.co.airfront.android.a2chMate")
 
     apply {
+        ManifestClassNameSanitizer.reset()
         document("AndroidManifest.xml").use { document ->
             val application = document.getElementsByTagName("application").item(0) as? Element
                 ?: throw PatchException("AndroidManifest.xml does not contain an application element")
+            application.sanitizeComponentClassNames()
             val mainActivity = application.findLauncherActivity()
                 ?: throw PatchException("AndroidManifest.xml does not contain a launcher activity")
+            application.disableAdSdkComponents()
 
             if (!application.hasComponent("activity", SETTINGS_ACTIVITY)) {
                 val activity = document.createElement("activity").apply {
@@ -55,6 +60,69 @@ internal val chMateResourcePatch = resourcePatch {
             }
         }
 
+        val manifestFile = get("AndroidManifest.xml")
+        val resourceFiles = get("res").walkTopDown().filter { it.isFile }.toList()
+        val xmlFiles = resourceFiles.filter { it.extension == "xml" }
+        val xmlContents = (xmlFiles + manifestFile).associateWith { it.readText() }
+        val attrsFile = get("res/values/attrs.xml")
+        val publicFile = get("res/values/public.xml")
+        val numericSymbols = xmlContents[attrsFile]
+            ?.let(ResourceNameSanitizer::numericAttributeSymbols)
+            .orEmpty()
+        val resourceIdReferences = xmlContents[publicFile]
+            ?.let(ResourceNameSanitizer::resourceIdReferences)
+            .orEmpty()
+        val obfuscatedFileResources = xmlContents.entries.flatMap { (file, contents) ->
+            if (!file.parentFile.name.startsWith("values")) emptyList()
+            else ObfuscatedFileResources.find(contents, file.parentFile.name)
+        }
+
+        xmlContents.forEach { (file, contents) ->
+            var sanitized = ObfuscatedFileResources.removeAliases(contents)
+            sanitized = ResourceNameSanitizer.sanitizeXml(sanitized, numericSymbols, resourceIdReferences)
+            file.writeText(sanitized)
+        }
+        ObfuscatedFileResources.materialize(
+            sourceApkFile(),
+            get("res"),
+            obfuscatedFileResources,
+            numericSymbols,
+            resourceIdReferences,
+        )
+
+        val allXmlFiles = (get("res").walkTopDown().filter { it.isFile && it.extension == "xml" }.toList() + manifestFile)
+            .distinct()
+        val allXmlContents = allXmlFiles.associateWith { it.readText() }
+        val symbolicAttributes = ResourceNameSanitizer.symbolicAttributes(attrsFile.readText())
+        val missingDefinitions = allXmlContents.values
+            .map(ResourceNameSanitizer::findMissingAttributeValues)
+            .flatMap { it.entries }
+            .groupBy({ it.key }, { it.value })
+            .mapValues { (_, values) -> values.flatten().toSet() }
+        val rawSymbolicDefinitions = allXmlContents.values
+            .map { ResourceNameSanitizer.findRawSymbolicValues(it, symbolicAttributes) }
+            .flatMap { it.entries }
+            .groupBy({ it.key }, { it.value })
+            .mapValues { (_, values) -> values.flatten().toSet() }
+
+        allXmlContents.forEach { (file, contents) ->
+            file.writeText(ResourceNameSanitizer.sanitizeRawSymbolicValues(contents, symbolicAttributes))
+        }
+        var sanitizedAttrs = attrsFile.readText()
+        sanitizedAttrs = ResourceNameSanitizer.addMissingAttributeDefinitions(sanitizedAttrs, missingDefinitions)
+        sanitizedAttrs = ResourceNameSanitizer.addRawSymbolicDefinitions(
+            sanitizedAttrs,
+            rawSymbolicDefinitions,
+            symbolicAttributes,
+        )
+        attrsFile.writeText(sanitizedAttrs)
+        resourceFiles.forEach { file ->
+            val sanitizedName = ResourceNameSanitizer.sanitizeFileName(file.name)
+            if (sanitizedName != file.name && !file.renameTo(file.resolveSibling(sanitizedName))) {
+                throw PatchException("Could not sanitize resource file name: ${file.path}")
+            }
+        }
+
         val layoutPaths = get("res").listFiles()
             .orEmpty()
             .filter { it.isDirectory }
@@ -67,12 +135,20 @@ internal val chMateResourcePatch = resourcePatch {
             }
 
         layoutPaths.forEach { path ->
+            val file = get(path)
+            val original = file.readText()
+            val sanitized = LayoutXmlSanitizer.sanitize(original)
+            if (sanitized != original) file.writeText(sanitized)
+        }
+
+        layoutPaths.forEach { path ->
                 document(path).use { document ->
                     val elements = document.getElementsByTagName("*")
                     for (index in 0 until elements.length) {
                         val element = elements.item(index) as? Element ?: continue
                         if (!AdElementClassifier.isAdvertisement(
-                                element.tagName,
+                                element.getAttribute("class").takeIf { element.tagName == "view" && it.isNotEmpty() }
+                                    ?: element.tagName,
                                 element.getAttribute("android:id").ifEmpty { null },
                                 element.getAttribute("android:tag").ifEmpty { null },
                             )
@@ -89,6 +165,12 @@ internal val chMateResourcePatch = resourcePatch {
                 }
             }
     }
+}
+
+private fun ResourcePatchContext.sourceApkFile(): File {
+    val field = ResourcePatchContext::class.java.getDeclaredField("apkFile")
+    field.isAccessible = true
+    return field.get(this) as? File ?: throw PatchException("Could not access source APK")
 }
 
 private fun Element.hasComponent(tagName: String, className: String): Boolean {
@@ -123,5 +205,30 @@ private fun Element.hasNamedChild(tagName: String, name: String): Boolean {
     val children = getElementsByTagName(tagName)
     return (0 until children.length).any { index ->
         (children.item(index) as? Element)?.getAttribute("android:name") == name
+    }
+}
+
+private fun Element.disableAdSdkComponents() {
+    listOf("activity", "provider", "receiver", "service").forEach { tagName ->
+        val components = getElementsByTagName(tagName)
+        for (index in 0 until components.length) {
+            val component = components.item(index) as? Element ?: continue
+            if (AdElementClassifier.isAdSdkClass(component.getAttribute("android:name"))) {
+                component.setAttribute("android:enabled", "false")
+            }
+        }
+    }
+}
+
+private fun Element.sanitizeComponentClassNames() {
+    listOf("activity", "activity-alias", "provider", "receiver", "service").forEach { tagName ->
+        val components = getElementsByTagName(tagName)
+        for (index in 0 until components.length) {
+            val component = components.item(index) as? Element ?: continue
+            val name = component.getAttribute("android:name")
+            if (name.isNotEmpty()) {
+                component.setAttribute("android:name", ManifestClassNameSanitizer.sanitize(name))
+            }
+        }
     }
 }

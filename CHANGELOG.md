@@ -13,6 +13,14 @@
 - 広告要素分類と広告ホスト判定の単体テスト
 - Android 6 以上向け拡張機能の Debug / Release build と Lint 構成
 
+### Fixed
+
+- 実在する4世代のChMateで広告SDK通信が初期化段階から始まらないように、Google Mobile Ads内部packageとNend SDKの分類、広告SDK manifest componentの無効化、広告request entry pointの置換を追加
+- 難読化された内部classの `$` を含む不正なXML要素名でresource再コンパイルが失敗しないように、Android inflater互換の `<view class="...">` 形式へ正規化
+- ハイフンを含むR8生成コンポーネント名を、マニフェストとDEXの両方で再コンパイル可能な名前へ正規化
+- 数値だけのresource名・参照・ファイル名を、public IDを維持したままAAPT2互換名へ正規化
+- APK直下へ難読化された画像・binary XML resourceを標準resource directoryへ復元
+
 ### Security
 
 - GitHub Packages token を環境変数だけから受け取り、リポジトリへ保存しない構成

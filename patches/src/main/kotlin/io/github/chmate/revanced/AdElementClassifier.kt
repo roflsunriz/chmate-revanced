@@ -17,6 +17,7 @@ internal object AdElementClassifier {
 
     private val sdkClassMarkers = listOf(
         "com.google.android.gms.ads",
+        "com.google.android.gms.internal.ads",
         "com.google.ads",
         "com.amazon.device.ads",
         "com.applovin",
@@ -25,6 +26,7 @@ internal object AdElementClassifier {
         "com.bytedance.sdk.openadsdk",
         "com.facebook.ads",
         "com.inmobi",
+        "net.nend.android",
     )
 
     fun isAdvertisement(tagName: String, idValue: String?, tagValue: String?): Boolean {
@@ -52,6 +54,16 @@ internal object AdElementClassifier {
         return sdkClassMarkers.any { marker ->
             normalized == marker || normalized.startsWith("$marker.") || normalized.contains(".$marker.")
         }
+    }
+
+    fun isAdSdkRequestMethod(className: String, methodName: String, returnType: String): Boolean {
+        if (returnType != "V" || !isAdSdkClass(className)) return false
+
+        val normalizedName = methodName.lowercase()
+        return normalizedName == "initialize" ||
+            normalizedName.contains("loadad") ||
+            normalizedName.contains("requestad") ||
+            normalizedName.contains("fetchad")
     }
 
     private fun resourceName(value: String) = value

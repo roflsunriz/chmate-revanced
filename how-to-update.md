@@ -28,12 +28,14 @@ APK はリポジトリ外で管理します。
 3. DEX 内の広告 SDK package と、利用している通信 API を列挙する。
 4. `res/layout*` の広告領域について View class、resource ID、tag を列挙する。
 5. 新しい SDK を発見した場合は、SDK class marker と固有ホストを追加する。一般サイトまで遮断する広すぎるドメインは追加しない。
+6. XAPK の場合は base APK だけでなく全 split APK の一覧も記録する。patch 後は全 split を同じ鍵で再署名し、`adb install-multiple` または対応する split installer で一括導入する。
 
 ## 3. patch 適用を検証する
 
 現在版と一つ前の版へ同じ `.rvp` を適用し、それぞれで次を確認します。
 
 - patch が例外なく完了し、署名後の APK をインストールできる
+- XAPK の全 split が base APK と同じ証明書で署名され、欠落なく一括インストールできる
 - 通常起動と設定画面起動が成功する
 - スレッド上部と途中の広告領域が `0px` で、余白も残らない
 - スレッド一覧、閲覧、書き込み、画像表示など広告以外の通信が壊れていない

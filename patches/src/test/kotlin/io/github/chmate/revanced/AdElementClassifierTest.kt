@@ -10,7 +10,25 @@ class AdElementClassifierTest {
         assertTrue(AdElementClassifier.isAdvertisement("com.google.android.gms.ads.AdView", null, null))
         assertTrue(AdElementClassifier.isAdvertisement("com.example.BannerAdView", null, null))
         assertTrue(AdElementClassifier.isAdSdkClass("Lcom/google/android/gms/ads/internal/client/zzay;"))
+        assertTrue(AdElementClassifier.isAdSdkClass("Lcom/google/android/gms/internal/ads/zzclc;"))
         assertTrue(AdElementClassifier.isAdSdkClass("com.applovin.sdk.AppLovinSdk"))
+        assertTrue(AdElementClassifier.isAdSdkClass("Lnet/nend/android/NendAdView;"))
+    }
+
+    @Test
+    fun `advertising SDK request entry points are detected conservatively`() {
+        assertTrue(AdElementClassifier.isAdSdkRequestMethod(
+            "Lcom/google/android/gms/ads/AdView;", "loadAd", "V",
+        ))
+        assertTrue(AdElementClassifier.isAdSdkRequestMethod(
+            "Lcom/amazon/device/ads/DTBAdRequest;", "loadAd", "V",
+        ))
+        assertFalse(AdElementClassifier.isAdSdkRequestMethod(
+            "Lcom/google/android/gms/ads/AdView;", "getAdSize", "Lcom/google/android/gms/ads/AdSize;",
+        ))
+        assertFalse(AdElementClassifier.isAdSdkRequestMethod(
+            "Ljp/co/airfront/android/a2chMate/Foo;", "loadAd", "V",
+        ))
     }
 
     @Test

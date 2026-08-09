@@ -43,6 +43,10 @@ private fun rewrite(
     reference: MethodReference,
     blockAll: Boolean,
 ): Rewrite? {
+    if (AdElementClassifier.isAdSdkRequestMethod(reference.definingClass, reference.name, reference.returnType)) {
+        return Rewrite.Replace(index, "nop")
+    }
+
     val registers = instruction.argumentRegisters() ?: return null
     val signature = reference.toString()
 
@@ -84,7 +88,6 @@ private fun headerRewrite(
     instruction: Instruction,
     reference: MethodReference,
     registers: List<Int>,
-    blockAll: Boolean,
 ): Rewrite? {
     if (reference.name !in setOf("header", "addHeader", "setHeader", "setRequestProperty", "addRequestProperty")) {
         return null
@@ -113,6 +116,7 @@ private fun urlRewrite(
     instruction: Instruction,
     reference: MethodReference,
     registers: List<Int>,
+    blockAll: Boolean,
 ): Rewrite? {
     if (reference.name !in setOf("url", "newUrlRequestBuilder")) return null
     val firstParameter = reference.parameterTypes.firstOrNull()?.toString() ?: return null
