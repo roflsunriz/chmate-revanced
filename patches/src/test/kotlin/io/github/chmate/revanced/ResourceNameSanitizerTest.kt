@@ -43,6 +43,10 @@ class ResourceNameSanitizerTest {
         val sanitizedAttrs = ResourceNameSanitizer.addMissingAttributeDefinitions(
             ResourceNameSanitizer.sanitizeXml(attrs, symbols),
             definitions,
+            mapOf(
+                "pullSetting" to mapOf("7f0a0153" to 1),
+                "displayOptions" to mapOf("7f0a0326" to 4),
+            ),
         )
 
         assertEquals(
@@ -50,8 +54,50 @@ class ResourceNameSanitizerTest {
                 "<style><item name=\"displayOptions\">missing_7f0a0326</item></style>",
             ResourceNameSanitizer.sanitizeXml(usage, symbols),
         )
-        check("<flag name=\"missing_7f0a0153\" value=\"0x7f0a0153\" />" in sanitizedAttrs)
-        check("<flag name=\"missing_7f0a0326\" value=\"0x7f0a0326\" />" in sanitizedAttrs)
+        check("<flag name=\"missing_7f0a0153\" value=\"0x00000001\" />" in sanitizedAttrs)
+        check("<flag name=\"missing_7f0a0326\" value=\"0x00000004\" />" in sanitizedAttrs)
+    }
+
+    @Test
+    fun `attribute IDs are recovered from sanitized public resources`() {
+        val publicXml = """
+            <resources>
+                <public type="attr" name="pullSetting" id="0x7f04020e" />
+                <public type="id" name="res_2131297014" id="0x7f0902f6" />
+            </resources>
+        """.trimIndent()
+
+        assertEquals(
+            mapOf("pullSetting" to 0x7f04020e),
+            ResourceNameSanitizer.attributeResourceIds(publicXml),
+        )
+    }
+
+    @Test
+    fun `application layout attributes retain their compiled resource IDs and scalar types`() {
+        val attrs = """
+            <resources>
+                <attr name="layout_constraintEnd_toEndOf"><enum name="res_2131296739" value="0" /></attr>
+                <attr name="pullSetting"><flag name="res_2131297014" value="2" /></attr>
+            </resources>
+        """.trimIndent()
+        val layout = """
+            <o.Root xmlns:android="http://schemas.android.com/apk/res/android">
+                <o.Toolbar layout_constraintEnd_toEndOf="res_2131296739" pullSetting="res_2131297014" />
+            </o.Root>
+        """.trimIndent()
+
+        assertEquals(
+            """
+                <o.Root xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+                    <o.Toolbar app:layout_constraintEnd_toEndOf="res_2131296739" app:pullSetting="res_2131297014" />
+                </o.Root>
+            """.trimIndent(),
+            ResourceNameSanitizer.qualifyApplicationAttributes(
+                layout,
+                ResourceNameSanitizer.applicationAttributeNames(attrs),
+            ),
+        )
     }
 
     @Test

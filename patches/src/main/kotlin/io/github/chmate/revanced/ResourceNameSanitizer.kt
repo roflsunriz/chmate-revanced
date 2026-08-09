@@ -16,10 +16,44 @@ internal object ResourceNameSanitizer {
         """<attr\b(?=[^>]*\bname="([^"]+)")[^>]*(?<!/)>(.*?)</attr>""",
         RegexOption.DOT_MATCHES_ALL,
     )
+    private val publicAttribute = Regex(
+        """<public\b[^>]*\btype="attr"[^>]*\bname="([^"]+)"[^>]*\bid="0x([0-9A-Fa-f]+)"[^>]*/>""",
+    )
+    private val unqualifiedXmlAttribute = Regex(
+        """(\s)([A-Za-z_][A-Za-z0-9_.-]*)(=")""",
+    )
+    private val rootElement = Regex("""(<\?xml[^>]*>\s*)?<([A-Za-z_][A-Za-z0-9_.${'$'}-]*)""")
 
     fun numericAttributeSymbols(attrsXml: String): Set<String> = numericAttributeSymbol.findAll(attrsXml)
         .map { it.groupValues[1] }
         .toSet()
+
+    fun applicationAttributeNames(attrsXml: String): Set<String> = Regex(
+        """<attr\b[^>]*\bname="([^"]+)"""",
+    ).findAll(attrsXml).map { it.groupValues[1] }.toSet()
+
+    fun attributeResourceIds(publicXml: String): Map<String, Int> = publicAttribute.findAll(publicXml)
+        .associate { match -> match.groupValues[1] to match.groupValues[2].toLong(16).toInt() }
+
+    fun qualifyApplicationAttributes(xml: String, attributeNames: Set<String>): String {
+        var changed = false
+        var result = unqualifiedXmlAttribute.replace(xml) { match ->
+            val name = match.groupValues[2]
+            if (name !in attributeNames) {
+                match.value
+            } else {
+                changed = true
+                "${match.groupValues[1]}app:$name${match.groupValues[3]}"
+            }
+        }
+        if (!changed || "xmlns:app=" in result) return result
+
+        val match = rootElement.find(result) ?: return result
+        return result.replaceRange(
+            match.range,
+            "${match.groupValues[1]}<${match.groupValues[2]} xmlns:app=\"http://schemas.android.com/apk/res-auto\"",
+        )
+    }
 
     fun sanitizeXml(
         xml: String,
@@ -73,7 +107,11 @@ internal object ResourceNameSanitizer {
         return result
     }
 
-    fun addMissingAttributeDefinitions(attrsXml: String, definitions: Map<String, Set<String>>): String {
+    fun addMissingAttributeDefinitions(
+        attrsXml: String,
+        definitions: Map<String, Set<String>>,
+        originalValues: Map<String, Map<String, Int>>,
+    ): String {
         var result = attrsXml
         definitions.forEach { (attributeName, values) ->
             val expanded = Regex(
@@ -83,7 +121,9 @@ internal object ResourceNameSanitizer {
             val selfClosing = Regex("""<attr\b([^>]*\bname="${Regex.escape(attributeName)}"[^>]*)\s*/>""")
             val kind = symbolicAttributes(attrsXml)[attributeName] ?: "flag"
             val flags = values.filterNot { hex -> "name=\"missing_$hex\"" in result }.joinToString(separator = "") { hex ->
-                "\n        <$kind name=\"missing_$hex\" value=\"0x$hex\" />"
+                val value = originalValues[attributeName]?.get(hex)
+                    ?: error("Could not recover value for $attributeName/missing_$hex")
+                "\n        <$kind name=\"missing_$hex\" value=\"0x${value.toUInt().toString(16).padStart(8, '0')}\" />"
             }
 
             result = when {

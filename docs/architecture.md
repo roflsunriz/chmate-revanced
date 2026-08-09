@@ -6,6 +6,8 @@
 
 数値だけのresource名、`$`を含む難読化Viewタグ、R8生成component名をAAPT2互換表現へ正規化します。resource本体がAPK直下へ移された版では、元のresource tableを使って画像とbinary XMLを標準の`res/<type>-<qualifier>`へ復元してから再構築します。public resource IDは維持するため、DEX内の整数ID参照は変更しません。
 
+ApktoolがChMate独自のlayout属性を名前空間なしで復号した場合は、`attrs.xml`と`public.xml`を基準に`app:`名前空間へ戻します。未知のenum / flag symbolはresource IDそのものを値として流用せず、元APKのresource tableから対応するscalar値を回収します。これによりConstraintLayoutの親参照、pull方向、タップ領域などがAAPT2で生文字列へ変わることを防ぎます。
+
 `NetworkBoundaryPatch` は難読化名ではなく method reference を走査します。通常の ChMate コードには既知広告ホストの判定を挟み、広告 SDK package 内のコードには送信先を問わない遮断 method を挟みます。同時に User-Agent が到達しやすい HTTP header、`System.getProperty("http.agent")`、WebView の各境界を置換します。
 
 広告 SDK の通信開始を上流でも止めるため、manifest の既知 SDK component を無効化し、戻り値が `void` の `initialize`、`loadAd`、`requestAd`、`fetchAd` 系 entry point を `nop` へ置換します。戻り値を持つ method は後続の `move-result` を壊さないよう対象外です。
@@ -44,3 +46,5 @@ User-Agent 対象:
 - JUnit Jupiter `5.13.4` / Platform Launcher `1.13.4`: Kotlin の patch ロジックと Java の runtime ロジックを同じ test engine で検証するため。Gradle 9 は launcher の明示的な runtime 依存を要求する。JUnit 4 は Kotlin / Java 両方で使えるが、今後の parameterized test 拡張性から不採用。
 
 影響範囲は build と test のみで、JUnit は `.rvp` や `.rve` に含まれません。Patcher と SMALI は patch bundle のコンパイル対象です。依存 lock は正規の GitHub Packages 認証で全 configuration を解決してから生成し、解決不能な状態の不完全な lockfile はコミットしません。
+
+Android / Gradle plugin の build・test tooling が解決する推移的依存は、OSV の既知脆弱性を含まない互換版へ root build で整列します。Netty は module 間の版ずれを避けるため全 module を同じ版にし、Bouncy Castle と Protobuf も同一 group 内を揃えます。これらは build・test classpath の防御であり、ChMate へ注入する `.rve` や配布 `.rvp` に追加ライブラリとして同梱しません。

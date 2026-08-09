@@ -81,6 +81,15 @@ internal val chMateResourcePatch = resourcePatch {
             .flatMap { it.entries }
             .groupBy({ it.key }, { it.value })
             .mapValues { (_, values) -> values.flatten().toSet() }
+        val originalMissingValues = try {
+            OriginalAttributeValues.resolve(
+                sourceApkFile(),
+                ResourceNameSanitizer.attributeResourceIds(publicFile.readText()),
+                missingDefinitions,
+            )
+        } catch (exception: Exception) {
+            throw PatchException("Could not recover original custom attribute values", exception)
+        }
         val rawSymbolicDefinitions = allXmlContents.values
             .map { ResourceNameSanitizer.findRawSymbolicValues(it, symbolicAttributes) }
             .flatMap { it.entries }
@@ -91,13 +100,26 @@ internal val chMateResourcePatch = resourcePatch {
             file.writeText(ResourceNameSanitizer.sanitizeRawSymbolicValues(contents, symbolicAttributes))
         }
         var sanitizedAttrs = attrsFile.readText()
-        sanitizedAttrs = ResourceNameSanitizer.addMissingAttributeDefinitions(sanitizedAttrs, missingDefinitions)
+        sanitizedAttrs = ResourceNameSanitizer.addMissingAttributeDefinitions(
+            sanitizedAttrs,
+            missingDefinitions,
+            originalMissingValues,
+        )
         sanitizedAttrs = ResourceNameSanitizer.addRawSymbolicDefinitions(
             sanitizedAttrs,
             rawSymbolicDefinitions,
             symbolicAttributes,
         )
         attrsFile.writeText(sanitizedAttrs)
+
+        val applicationAttributeNames = ResourceNameSanitizer.applicationAttributeNames(sanitizedAttrs)
+        allXmlFiles
+            .filter { file -> file.parentFile.name == "layout" || file.parentFile.name.startsWith("layout-") }
+            .forEach { file ->
+                file.writeText(
+                    ResourceNameSanitizer.qualifyApplicationAttributes(file.readText(), applicationAttributeNames),
+                )
+            }
 
         val xmlResourcePaths = get("res").walkTopDown()
             .filter { file ->
