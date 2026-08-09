@@ -80,7 +80,7 @@ APK はリポジトリ外で管理します。
 4. `docs/release-notes/v<version>.md` を作り、APK のハッシュ、端末 / Android 版、実測結果を記録する。ただし APK 自体は添付しない。
 5. クリーンビルドと全検証、依存関係の脆弱性検査を再実行する。
 6. `main` へ push した後、GitHub Actions の `Release` workflow を手動実行する。手動実行は Release を作らず、同じテスト、Lint、`.rvp` 生成、SHA-256 検証を行って Actions artifact を作るため、公開前確認に使う。
-7. artifact の内容をローカル成果物と照合し、問題がなければ署名付きタグ `v<version>` を `gradle.properties` と同じ commit に作成して push する。
+7. artifact の内容をローカル成果物と照合し、問題がなければ注釈付きタグ `v<version>` を `gradle.properties` と同じ commit に作成して push する。
 8. タグ起点の `Release` workflow が成功し、GitHub Release に `patches-<version>.rvp` と `patches-<version>.rvp.sha256` の2資産だけが公開されたことを確認する。
 
 Release workflow は ReVanced 公式と同じ `.rvp` 形式を直接配布します。ZIP は作りません。タグ名と `gradle.properties` の version が一致しない場合、release note がない場合、テスト・Lint・checksum 検証のいずれかが失敗した場合は公開しません。
