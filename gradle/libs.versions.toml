@@ -1,0 +1,7 @@
+[versions]
+revanced-patcher = "22.0.1"
+smali = "3.0.9"
+
+[libraries]
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version = "5.13.4" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version = "1.13.4" }

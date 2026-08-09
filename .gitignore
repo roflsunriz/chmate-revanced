@@ -1,2 +1,17 @@
 # Symbolic links
 COMMON-AGENTS.md
+
+# Gradle / IDE
+.gradle/
+build/
+**/build/
+.idea/
+*.iml
+local.properties
+
+# Local APKs and patched outputs
+*.apk
+*.apkm
+*.xapk
+*.aab
+output/
