@@ -9,6 +9,7 @@ ChMate (`jp.co.airfront.android.a2chMate`) 向けの ReVanced Patch です。ChM
 - 既知の広告ホストを DNS、`URL`、HTTP クライアント、WebView の境界で遮断する
 - 既知広告 SDK のクラスから発生する DNS、`URL`、文字列 URL、WebView 通信を送信先にかかわらず遮断する
 - 広告 SDK の自動初期化 component と、公開されている初期化・広告 request entry point を無効化する
+- Firebase Analytics / Crashlytics / Performance の収集を manifest で停止し、関連テレメトリホストも遮断する
 - HTTP ヘッダー、`http.agent`、WebView に設定可能な User-Agent を適用する
 - ChMate 本体の「設定」に組み込んだ画面から保存・既定値への復元・ワンボタン再起動を行う
 - 再署名された APK を異常終了させる多段の署名整合性チェックを、結果配列の比較構造と限定した失敗処理に基づいて回避する
@@ -67,7 +68,9 @@ ChMate APK や patch 済み APK はこのリポジトリで配布しません。
 - 広告 component: 検出した SDK component を各世代で30/30、35/35、6/6、29/29件無効化済み
 - XAPK: `0.8.10.179` の20 APK、`0.8.10.241` の4 APKを同一証明書で再署名し、split setを再構成済み
 - 実機起動: Pixel 10a / Android 17 へ `0.8.10.241` の split set をインストールし、「設定」→「ChMate ReVanced」の表示、UAの保存・既定値復元、ワンボタン再起動による PID 変更と本体画面への復帰を確認
-- 未実施: スレッド画面上の広告高さ、User-Agent の実リクエスト送信値、広告 SDK / 既知広告ホストのパケット通信確認
+- 実画面（2026-08-09）: Pixel 10a / Android 17、ChMate `0.8.10.241`、1080×2424pxで実在する5chスレッドを表示。上部はツールバー下端247pxから通常の既読位置表示が251pxで始まり、広告由来の空白は`0px`。レス17〜22のViewGroupは前項の終端と次項の始端が537、858、1283、1660、2037pxで一致し、途中広告由来の空白も`0px`
+- User-Agent（2026-08-09）: 「保存して再起動」でmain processが入れ替わった後、`egg.5ch.io`の名前解決と同じ通信処理で設定値`Monazilla/1.00-ChMateRvUA-20260809`が適用され、板一覧と実スレッド本文の取得に成功
+- 通信遮断（2026-08-09）: AdGuard / VPN / Private DNS / HTTP proxyを無効にした状態で、Amazon Adsの4要求とUnity Adsの1要求がDNS・接続前のpatch境界で例外終了することを確認。Firebaseは`App measurement deactivated via the manifest`を記録し、30秒間のコールドスタート・板一覧・スレッド表示で`FA-SVC`、Crashlytics、firebaseloggingの送信試行は0件。通常の`menu.5ch.io`、`egg.5ch.io`、画像ホスト通信は成功
 
 検証用 APK を用意した後の手順と合格条件は [how-to-update.md](how-to-update.md) にあります。
 

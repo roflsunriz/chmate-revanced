@@ -52,6 +52,33 @@ class ChMateResourcePatchTest {
         assertFalse(document.isEmptyPreferenceScreen())
     }
 
+    @Test
+    fun `deactivates analytics and telemetry collection`() {
+        val application = applicationElement(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application>
+                <meta-data android:name="firebase_analytics_collection_enabled" android:value="true" />
+              </application>
+            </manifest>
+            """.trimIndent(),
+        )
+
+        application.disableTelemetryCollection(application.ownerDocument)
+
+        val values = (0 until application.childNodes.length)
+            .mapNotNull { application.childNodes.item(it) as? Element }
+            .filter { it.tagName == "meta-data" }
+            .associate { it.getAttribute("android:name") to it.getAttribute("android:value") }
+        assertEquals("true", values["firebase_analytics_collection_deactivated"])
+        assertEquals("false", values["firebase_analytics_collection_enabled"])
+        assertEquals("false", values["google_analytics_adid_collection_enabled"])
+        assertEquals("false", values["google_analytics_automatic_screen_reporting_enabled"])
+        assertEquals("false", values["firebase_crashlytics_collection_enabled"])
+        assertEquals("false", values["firebase_performance_collection_enabled"])
+        assertEquals(6, values.size)
+    }
+
     private fun applicationElement(xml: String): Element {
         val document = document(xml)
         return document.getElementsByTagName("application").item(0) as Element

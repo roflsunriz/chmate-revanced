@@ -26,6 +26,7 @@ internal val chMateResourcePatch = resourcePatch {
             val mainActivity = application.findLauncherActivity()
                 ?: throw PatchException("AndroidManifest.xml does not contain a launcher activity")
             application.disableAdSdkComponents()
+            application.disableTelemetryCollection(document)
 
             if (!application.hasComponent("activity", SETTINGS_ACTIVITY)) {
                 application.addSettingsActivity(document, mainActivity)
@@ -249,6 +250,24 @@ private fun Element.disableAdSdkComponents() {
                 component.setAttribute("android:enabled", "false")
             }
         }
+    }
+}
+
+internal fun Element.disableTelemetryCollection(document: Document) {
+    mapOf(
+        "firebase_analytics_collection_deactivated" to "true",
+        "firebase_analytics_collection_enabled" to "false",
+        "google_analytics_adid_collection_enabled" to "false",
+        "google_analytics_automatic_screen_reporting_enabled" to "false",
+        "firebase_crashlytics_collection_enabled" to "false",
+        "firebase_performance_collection_enabled" to "false",
+    ).forEach { (name, value) ->
+        val existing = (0 until childNodes.length)
+            .mapNotNull { childNodes.item(it) as? Element }
+            .firstOrNull { it.tagName == "meta-data" && it.getAttribute("android:name") == name }
+        val metadata = existing ?: document.createElement("meta-data").also(::appendChild)
+        metadata.setAttribute("android:name", name)
+        metadata.setAttribute("android:value", value)
     }
 }
 

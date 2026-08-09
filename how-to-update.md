@@ -47,6 +47,15 @@ APK はリポジトリ外で管理します。
 
 通信確認は少なくとも、コールドスタート、スレッド一覧、スレッド表示を数分ずつ行います。端末の Private DNS や別の広告ブロッカーは無効にし、この patch 単独の結果を測ります。
 
+### Pixelでの実測手順
+
+1. AdGuardなどのVPN、Private DNS、システムHTTP proxyを停止する。過去にADBでproxyを設定した場合は、設定DBを削除するだけでなく`settings put global http_proxy :0`でConnectivityサービスへ無効状態を通知し、ChMateをforce-stopして新しいprocessで測る。
+2. 初期状態のChMateでは「掲示板設定」へBBSMENUを登録し、板一覧の読み込みテストが成功することを先に確認する。proxyが残っている場合は`Unexpected response code for CONNECT`になるため、その状態の結果をpatchの通信失敗として扱わない。
+3. 画面解像度を記録し、実在スレッドの先頭と途中を`uiautomator dump`と`screencap`で取得する。広告の前後にある通常Viewのboundsを比較し、広告由来の追加高が`0px`であることを数値で確認する。
+4. 識別可能なUser-Agentを保存して「保存して再起動」を押す。再起動前後のPIDを確認し、板一覧・スレッド本文の取得と同時に、実際のHTTP境界で設定値が選択されていることを確認する。確認後は既定値へ戻す。
+5. コールドスタート、板一覧、スレッド表示、十分なスクロールを行い、広告SDK要求がDNS・socket・URL接続より前で終了することを確認する。`adb logcat -s FA:V FA-SVC:V`では`App measurement deactivated via the manifest`が記録され、upload失敗を含む`FA-SVC`通信試行が出ないことを合格条件とする。
+6. QA用ログを一時追加した場合は製品buildから必ず除去し、通常buildを再適用してから端末を返す。proxy、stay-on、ADB reverseなど検証用の端末設定も元へ戻す。
+
 ## 4. 失敗時の切り分け
 
 - 広告の空白が残る: 対象 View の class / ID / tag を取得し、限定的な classifier を追加する。

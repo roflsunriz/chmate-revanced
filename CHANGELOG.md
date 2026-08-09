@@ -22,6 +22,7 @@
 - ハイフンを含むR8生成コンポーネント名を、マニフェストとDEXの両方で再コンパイル可能な名前へ正規化
 - 数値だけのresource名・参照・ファイル名を、public IDを維持したままAAPT2互換名へ正規化
 - APK直下へ難読化された画像・binary XML resourceを標準resource directoryへ復元
+- 実機計測で判明したFirebase Analytics / Crashlytics / Performanceの収集経路をmanifestで無効化し、関連テレメトリホストも接続前に遮断
 
 ### Security
 
