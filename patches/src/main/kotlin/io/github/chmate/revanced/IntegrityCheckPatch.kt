@@ -13,31 +13,45 @@ import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
-private const val TOAST_MAKE_TEXT =
-    "Landroid/widget/Toast;->makeText(Landroid/content/Context;II)Landroid/widget/Toast;"
+private const val REQUEST_WINDOW_FEATURE =
+    "Landroid/app/Activity;->requestWindowFeature(I)Z"
 
 internal fun BytecodePatchContext.patchIntegrityChecks() {
     classDefs.flatMap { classDef ->
         classDef.methods.mapNotNull { method ->
             val instructions = method.instructionsOrNull?.toList() ?: return@mapNotNull null
-            if (instructions.size < 100 || !instructions.containsMethodCall(TOAST_MAKE_TEXT)) {
+            if (instructions.size < 100) {
                 return@mapNotNull null
             }
-            val indices = instructions.indices.filter { index ->
+            val failureBranchIndices = instructions.indices.filter { index ->
                 instructions.isIntegrityFailureBranch(index)
             }
-            if (indices.isEmpty()) null else method to indices
+            val windowFeatureTrapIndices = if (failureBranchIndices.isEmpty()) {
+                emptyList()
+            } else {
+                instructions.indices.filter { index -> instructions.isWindowFeatureTrap(index) }
+            }
+            if (failureBranchIndices.isEmpty() && windowFeatureTrapIndices.isEmpty()) {
+                null
+            } else {
+                method to IntegrityPatchIndices(failureBranchIndices, windowFeatureTrapIndices)
+            }
         }
     }.forEach { (method, indices) ->
         val mutableMethod = firstMethod(method)
-        indices.forEach { index -> mutableMethod.replaceInstruction(index, "nop") }
+        val originalInstructions = method.instructionsOrNull!!.toList()
+        indices.failureBranches.forEach { index -> mutableMethod.replaceInstruction(index, "nop") }
+        indices.windowFeatureTraps.forEach { index ->
+            val divide = originalInstructions[index] as TwoRegisterInstruction
+            mutableMethod.replaceInstruction(index, "const/16 v${divide.registerA}, 0x1")
+        }
     }
 }
 
-private fun List<Instruction>.containsMethodCall(signature: String): Boolean = any { instruction ->
-    val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
-    reference?.toString() == signature
-}
+private data class IntegrityPatchIndices(
+    val failureBranches: List<Int>,
+    val windowFeatureTraps: List<Int>,
+)
 
 private fun List<Instruction>.isIntegrityFailureBranch(index: Int): Boolean {
     val comparison = getOrNull(index) as? TwoRegisterInstruction ?: return false
@@ -59,6 +73,15 @@ private fun List<Instruction>.isIntegrityFailureBranch(index: Int): Boolean {
         interveningOpcodes,
     )
 }
+
+private fun List<Instruction>.isWindowFeatureTrap(index: Int): Boolean {
+    val divide = getOrNull(index) as? TwoRegisterInstruction ?: return false
+    val followingReference = (getOrNull(index + 1) as? ReferenceInstruction)?.reference as? MethodReference
+    return matchesWindowFeatureTrap(divide.opcode, followingReference?.toString())
+}
+
+internal fun matchesWindowFeatureTrap(divideOpcode: Opcode, followingMethod: String?): Boolean =
+    divideOpcode == Opcode.DIV_INT_2ADDR && followingMethod == REQUEST_WINDOW_FEATURE
 
 private fun List<Instruction>.integerArrayReadEndingAt(index: Int): IntegrityArrayRead? {
     val read = getOrNull(index) as? ThreeRegisterInstruction ?: return null

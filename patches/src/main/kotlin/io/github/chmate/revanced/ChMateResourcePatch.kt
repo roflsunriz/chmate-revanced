@@ -8,6 +8,7 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 
 private const val SETTINGS_ACTIVITY = "app.revanced.extension.chmate.SettingsActivity"
+private const val SETTINGS_PREFERENCE_KEY = "chmateRevancedSettings"
 private const val BOOTSTRAP_PROVIDER = "app.revanced.extension.chmate.BootstrapProvider"
 private const val MAIN_ACTIVITY_METADATA = "app.revanced.extension.chmate.MAIN_ACTIVITY"
 private const val ACTION_MAIN = "android.intent.action.MAIN"
@@ -96,6 +97,23 @@ internal val chMateResourcePatch = resourcePatch {
             symbolicAttributes,
         )
         attrsFile.writeText(sanitizedAttrs)
+
+        val xmlResourcePaths = get("res").walkTopDown()
+            .filter { file ->
+                file.isFile && file.extension == "xml" && file.parentFile.name.startsWith("xml")
+            }
+            .map { file -> "res/${file.relativeTo(get("res")).invariantSeparatorsPath}" }
+            .toList()
+        val rootSettingsPaths = xmlResourcePaths.filter { path ->
+            document(path).use(Document::isEmptyPreferenceScreen)
+        }
+        if (rootSettingsPaths.isEmpty()) {
+            throw PatchException("Could not find the root ChMate PreferenceScreen")
+        }
+        rootSettingsPaths.forEach { path ->
+            document(path).use(Document::addSettingsPreference)
+        }
+
         resourceFiles.forEach { file ->
             val sanitizedName = ResourceNameSanitizer.sanitizeFileName(file.name)
             if (sanitizedName != file.name && !file.renameTo(file.resolveSibling(sanitizedName))) {
@@ -150,22 +168,33 @@ internal val chMateResourcePatch = resourcePatch {
 internal fun Element.addSettingsActivity(document: Document, mainActivity: String) {
     appendChild(document.createElement("activity").apply {
         setAttribute("android:name", SETTINGS_ACTIVITY)
-        setAttribute("android:exported", "true")
+        setAttribute("android:exported", "false")
         setAttribute("android:excludeFromRecents", "true")
         setAttribute("android:label", "ChMate ReVanced")
         setAttribute("android:theme", "@android:style/Theme.Material.Light.NoActionBar")
 
-        appendChild(document.createElement("intent-filter").apply {
-            appendChild(document.createElement("action").apply {
-                setAttribute("android:name", ACTION_MAIN)
-            })
-            appendChild(document.createElement("category").apply {
-                setAttribute("android:name", CATEGORY_LAUNCHER)
-            })
-        })
         appendChild(document.createElement("meta-data").apply {
             setAttribute("android:name", MAIN_ACTIVITY_METADATA)
             setAttribute("android:value", mainActivity)
+        })
+    })
+}
+
+internal fun Document.isEmptyPreferenceScreen(): Boolean {
+    val root = documentElement ?: return false
+    if (root.tagName != "PreferenceScreen") return false
+    return (0 until root.childNodes.length).none { index ->
+        root.childNodes.item(index) is Element
+    }
+}
+
+internal fun Document.addSettingsPreference() {
+    documentElement.appendChild(createElement("Preference").apply {
+        setAttribute("android:key", SETTINGS_PREFERENCE_KEY)
+        setAttribute("android:title", "ChMate ReVanced")
+        appendChild(createElement("intent").apply {
+            setAttribute("android:targetPackage", "jp.co.airfront.android.a2chMate")
+            setAttribute("android:targetClass", SETTINGS_ACTIVITY)
         })
     })
 }

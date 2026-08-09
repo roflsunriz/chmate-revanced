@@ -36,7 +36,8 @@ APK はリポジトリ外で管理します。
 
 - patch が例外なく完了し、署名後の APK をインストールできる
 - XAPK の全 split が base APK と同じ証明書で署名され、欠落なく一括インストールできる
-- 通常起動と設定画面起動が成功する
+- 通常起動と、ChMate の「設定」→「ChMate ReVanced」からの設定画面起動が成功する
+- `ChMate ReVanced` が独立した launcher Activity として公開されていない
 - スレッド上部と途中の広告領域が `0px` で、余白も残らない
 - スレッド一覧、閲覧、書き込み、画像表示など広告以外の通信が壊れていない
 - 空欄では元の User-Agent、設定後は指定値が HTTP / WebView で送られる
@@ -53,7 +54,7 @@ APK はリポジトリ外で管理します。
 - 正常通信まで止まる: 広すぎる host suffix または class marker を取り除き、SDK 固有の条件へ狭める。
 - User-Agent が変わらない: 実際のクライアントが使う header setter / request builder の method reference を追加する。
 - 再起動できない: patch 後 manifest の SettingsActivity metadata と元の launcher Activity 名を照合する。
-- 再署名後の起動直後に FileProvider の `onCreate`、不自然な `NullPointerException`、巨大配列確保の `OutOfMemoryError` で終了する: 署名整合性チェックの結果配列比較が変化していないか確認し、難読化クラス名ではなく配列読出しと失敗分岐の構造を限定して更新する。
+- 再署名後の起動直後や設定表示時に FileProvider の `onCreate`、不自然な `NullPointerException` / ゼロ除算、巨大配列確保の `OutOfMemoryError` で終了する: 署名整合性チェックの結果配列比較と、その直後の限定的な失敗処理が変化していないか確認し、難読化クラス名ではなく命令構造を限定して更新する。
 
 ## 5. リリース前
 

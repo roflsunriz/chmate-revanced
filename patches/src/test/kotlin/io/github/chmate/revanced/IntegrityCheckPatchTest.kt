@@ -31,4 +31,30 @@ class IntegrityCheckPatchTest {
     fun `does not classify comparisons with unrelated intervening work`() {
         assertFalse(matchesIntegrityComparison(firstRead, secondRead, 5, 2, listOf(Opcode.INVOKE_STATIC)))
     }
+
+    @Test
+    fun `detects the integrity division immediately before requesting a window feature`() {
+        assertTrue(
+            matchesWindowFeatureTrap(
+                Opcode.DIV_INT_2ADDR,
+                "Landroid/app/Activity;->requestWindowFeature(I)Z",
+            ),
+        )
+    }
+
+    @Test
+    fun `does not classify ordinary divisions or unrelated calls as the window feature trap`() {
+        assertFalse(
+            matchesWindowFeatureTrap(
+                Opcode.DIV_INT,
+                "Landroid/app/Activity;->requestWindowFeature(I)Z",
+            ),
+        )
+        assertFalse(
+            matchesWindowFeatureTrap(
+                Opcode.DIV_INT_2ADDR,
+                "Ljava/lang/Math;->abs(I)I",
+            ),
+        )
+    }
 }
