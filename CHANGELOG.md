@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-08-09
+
+### Fixed
+
+- ReVanced ManagerのAndroid XML parserがPC向けJAXPのsecurity featureを未実装でもpatchを開始できるようにし、DOCTYPE／外部entityはparser依存機能を使わず事前拒否する方式へ変更
+
 ## [1.0.1] - 2026-08-09
 
 ### Fixed

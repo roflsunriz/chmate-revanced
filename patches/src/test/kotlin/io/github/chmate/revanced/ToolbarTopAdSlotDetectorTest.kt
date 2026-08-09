@@ -1,6 +1,7 @@
 package io.github.chmate.revanced
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 class ToolbarTopAdSlotDetectorTest {
@@ -21,6 +22,18 @@ class ToolbarTopAdSlotDetectorTest {
             emptySet<String>(),
             ToolbarTopAdSlotDetector.detect(mapOf("header.xml" to layout(slotVisibility = ""))),
         )
+    }
+
+    @Test
+    fun `doctype declarations are rejected without parser specific security features`() {
+        val xml = """
+            <!DOCTYPE root [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+            <root>&xxe;</root>
+        """.trimIndent()
+
+        assertThrows(IllegalArgumentException::class.java) {
+            ToolbarTopAdSlotDetector.detect(mapOf("malicious.xml" to xml))
+        }
     }
 
     private fun layout(slotVisibility: String, withIntermediate: Boolean = false): String {

@@ -35,6 +35,7 @@ APK はリポジトリ外で管理します。
 現在版と一つ前の版へ同じ `.rvp` を適用し、それぞれで次を確認します。
 
 - patch が例外なく完了し、署名後の APK をインストールできる
+- PC上のReVanced CLIだけでなく、公式ReVanced Managerへ`.rvp`をストレージから追加し、実Android端末上でresource decodeからpatched APKの保存まで完走する
 - XAPK の全 split が base APK と同じ証明書で署名され、欠落なく一括インストールできる
 - 通常起動と、ChMate の「設定」→「ChMate ReVanced」からの設定画面起動が成功する
 - `ChMate ReVanced` が独立した launcher Activity として公開されていない
@@ -62,6 +63,7 @@ APK はリポジトリ外で管理します。
 6. 識別可能なUser-Agentを保存して「保存して再起動」を押す。再起動前後のPIDを確認し、ADB reverseなどで端末から到達できる一時HTTPサーバーをBBSMENU読み込みテストの送信先にして、生の`User-Agent`ヘッダーが入力値と完全一致することを確認する。値がChMate既定UAの接頭辞・接尾辞として付加されるだけなら不合格。確認後は既定値へ戻す。
 7. コールドスタート、板一覧、スレッド表示、十分なスクロールを行い、広告SDK要求がDNS・socket・URL接続より前で終了することを確認する。`adb logcat -s FA:V FA-SVC:V`では`App measurement deactivated via the manifest`が記録され、upload失敗を含む`FA-SVC`通信試行が出ないことを合格条件とする。
 8. QA用ログを一時追加した場合は製品buildから必ず除去し、通常buildを再適用してから端末を返す。proxy、stay-on、ADB reverseなど検証用の端末設定も元へ戻す。
+9. patch自身でXMLを解析する場合は、PCのJAXP実装だけが対応するparser featureを必須にしない。Android上のparserでも同じ入力を処理でき、DOCTYPE／外部entityを拒否する安全性も保たれることをManager実行と単体テストの両方で確認する。
 
 ## 4. 失敗時の切り分け
 

@@ -9,6 +9,7 @@ import org.xml.sax.InputSource
 internal object ToolbarTopAdSlotDetector {
     private const val ANDROID_NAMESPACE = "http://schemas.android.com/apk/res/android"
     private const val APP_NAMESPACE = "http://schemas.android.com/apk/res-auto"
+    private val forbiddenXmlDeclaration = Regex("""<!\s*(?:DOCTYPE|ENTITY)\b""", RegexOption.IGNORE_CASE)
     const val MARKER_TAG = "revanced_ad_container"
 
     fun detect(layouts: Map<String, String>): Set<String> {
@@ -63,13 +64,17 @@ internal object ToolbarTopAdSlotDetector {
     }
 
     private fun parse(xml: String): Document {
+        require(!forbiddenXmlDeclaration.containsMatchIn(xml)) {
+            "Layout XML must not contain DOCTYPE or ENTITY declarations"
+        }
         val factory = DocumentBuilderFactory.newInstance().apply {
             isNamespaceAware = true
-            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-            setFeature("http://xml.org/sax/features/external-general-entities", false)
-            setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            isExpandEntityReferences = false
         }
-        return factory.newDocumentBuilder().parse(InputSource(StringReader(xml)))
+        val builder = factory.newDocumentBuilder().apply {
+            setEntityResolver { _, _ -> InputSource(StringReader("")) }
+        }
+        return builder.parse(InputSource(StringReader(xml)))
     }
 
     private fun Element.androidAttribute(name: String): String =
