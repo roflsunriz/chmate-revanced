@@ -18,7 +18,8 @@ import java.util.WeakHashMap;
 public final class AdViewCollapser implements Application.ActivityLifecycleCallbacks {
     private static final Set<String> AD_RESOURCE_NAMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "ad", "ads", "ad_view", "adview", "ad_container", "adcontainer",
-            "ad_banner", "adbanner", "banner_ad", "bannerad", "advertisement"
+            "ad_banner", "adbanner", "banner_ad", "bannerad", "advertisement",
+            "revanced_ad_container"
     )));
 
     private static final Map<Application, AdViewCollapser> INSTANCES =
@@ -95,6 +96,10 @@ public final class AdViewCollapser implements Application.ActivityLifecycleCallb
             return true;
         }
 
+        if (isAdvertisementTag(view.getTag())) {
+            return true;
+        }
+
         if (view.getId() == View.NO_ID) {
             return false;
         }
@@ -104,6 +109,16 @@ public final class AdViewCollapser implements Application.ActivityLifecycleCallb
         } catch (RuntimeException ignored) {
             return false;
         }
+    }
+
+    static boolean isAdvertisementTag(Object tag) {
+        if (!(tag instanceof CharSequence)) {
+            return false;
+        }
+        String normalized = tag.toString()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9_]+", "_");
+        return AD_RESOURCE_NAMES.contains(normalized);
     }
 
     private static void collapse(View view) {

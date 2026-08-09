@@ -49,7 +49,7 @@ $env:ORG_GRADLE_PROJECT_githubPackagesPassword = '<read:packagesトークン>'
 .\gradlew.bat :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid
 ```
 
-成果物は `patches/build/libs/patches-1.0.0.rvp` です。バージョンは `gradle.properties` の `version` に従います。
+成果物は `patches/build/libs/patches-1.0.1.rvp` です。バージョンは `gradle.properties` の `version` に従います。
 
 認証方法の詳細は [GitHub Packages の公式ドキュメント](https://docs.github.com/ja/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry)を参照してください。
 
@@ -74,7 +74,7 @@ ChMate APK や patch 済み APK はこのリポジトリで配布しません。
 - 広告 component: 検出した SDK component を各世代で30/30、35/35、6/6、29/29件無効化済み
 - XAPK: `0.8.10.179` の20 APK、`0.8.10.241` の4 APKを同一証明書で再署名し、split setを再構成済み
 - 実機起動: Pixel 10a / Android 17 へ `0.8.10.241` の split set をインストールし、「設定」→「ChMate ReVanced」の表示、UAの保存・既定値復元、ワンボタン再起動による PID 変更と本体画面への復帰を確認
-- 実画面（2026-08-09）: Pixel 10a / Android 17、ChMate `0.8.10.241`、1080×2424pxで実在する5chスレッドを表示。上部はツールバー下端247pxから通常の既読位置表示が251pxで始まり、広告由来の空白は`0px`。レス17〜22のViewGroupは前項の終端と次項の始端が537、858、1283、1660、2037pxで一致し、途中広告由来の空白も`0px`
+- 実画面（2026-08-09）: Pixel 10a / Android 17、ChMate `0.8.10.241`、1080×2424pxで実在する5chスレッドを表示。v1.0.1候補では上部広告コンテナがUIツリーから消え、タイトルViewが`[0,152][1080,247]`から始まるため、従来139pxあったタイトル直上の広告由来追加高は`0px`。レス17〜22のViewGroupは前項の終端と次項の始端が537、858、1283、1660、2037pxで一致し、途中広告由来の空白も`0px`
 - UI退行（2026-08-09）: タイトルViewのboundsが`[0,152][1080,247]`で全幅、スレッド一覧を下へ引いた更新spinner、スレッド末尾を上へ引いた「離すと更新」を個別に確認。実ID文字列と同じID行の右側空白を別々にタップし、どちらも同IDポップアップになることを確認
 - resource再構築（2026-08-09）: 4世代すべてで`pullSetting`、`targetListId`、ConstraintLayout属性がresource ID付きの整数／参照型として保持され、生文字列へ退行しないことをAAPT2のbinary XML dumpで確認
 - User-Agent（2026-08-09）: 「保存して再起動」でmain processが入れ替わった後、ADB reverse先のHTTPサーバーでBBSMENUリクエストを受信。修正前は入力値がChMate既定値へ付加されていたが、最終版では入力した`WireUA-20260809`と受信した`User-Agent`ヘッダーが完全一致。既定値へ戻した後も`egg.5ch.io`の板一覧と実スレッド本文の取得に成功

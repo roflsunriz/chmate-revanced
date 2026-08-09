@@ -13,6 +13,7 @@ internal object AdElementClassifier {
         "banner_ad",
         "bannerad",
         "advertisement",
+        ToolbarTopAdSlotDetector.MARKER_TAG,
     )
 
     private val sdkClassMarkers = listOf(

@@ -56,7 +56,7 @@ APK はリポジトリ外で管理します。
 
 1. AdGuardなどのVPN、Private DNS、システムHTTP proxyを停止する。過去にADBでproxyを設定した場合は、設定DBを削除するだけでなく`settings put global http_proxy :0`でConnectivityサービスへ無効状態を通知し、ChMateをforce-stopして新しいprocessで測る。
 2. 初期状態のChMateでは「掲示板設定」へBBSMENUを登録し、板一覧の読み込みテストが成功することを先に確認する。proxyが残っている場合は`Unexpected response code for CONNECT`になるため、その状態の結果をpatchの通信失敗として扱わない。
-3. 画面解像度を記録し、実在スレッドの先頭と途中を`uiautomator dump`と`screencap`で取得する。広告の前後にある通常Viewのboundsを比較し、広告由来の追加高が`0px`であることを数値で確認する。
+3. 画面解像度を記録し、実在スレッドの先頭と途中を`uiautomator dump`と`screencap`で取得する。タイトル直上の広告コンテナがUIツリーに存在しないかboundsの高さが`0px`であり、タイトルViewがアプリ内容領域の上端から直ちに始まることを個別に確認する。途中広告も前後にある通常Viewのboundsを比較し、広告由来の追加高が`0px`であることを数値で確認する。
 4. スレッド一覧の先頭で下へ引いた画面の更新spinnerと、スレッド末尾で上へ引いて保持した画面の「離すと更新」を別々に撮る。タイトルViewのboundsが画面幅まであることも確認する。
 5. 実IDを表示するレスを使い、ID文字列の座標と、同じID行の文字がない右側座標を別々にタップする。両方で同IDポップアップが出ることを確認し、本文の空白をタップしたときの参照ツリーとは区別する。
 6. 識別可能なUser-Agentを保存して「保存して再起動」を押す。再起動前後のPIDを確認し、ADB reverseなどで端末から到達できる一時HTTPサーバーをBBSMENU読み込みテストの送信先にして、生の`User-Agent`ヘッダーが入力値と完全一致することを確認する。値がChMate既定UAの接頭辞・接尾辞として付加されるだけなら不合格。確認後は既定値へ戻す。

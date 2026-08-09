@@ -162,12 +162,18 @@ internal val chMateResourcePatch = resourcePatch {
             if (sanitized != original) file.writeText(sanitized)
         }
 
+        val toolbarTopAdSlotIds = ToolbarTopAdSlotDetector.detect(
+            layoutPaths.associateWith { path -> get(path).readText() },
+        )
+
         layoutPaths.forEach { path ->
                 document(path).use { document ->
                     val elements = document.getElementsByTagName("*")
                     for (index in 0 until elements.length) {
                         val element = elements.item(index) as? Element ?: continue
-                        if (!AdElementClassifier.isAdvertisement(
+                        val resourceId = element.getAttribute("android:id").substringAfterLast('/')
+                        val isToolbarTopAdSlot = resourceId in toolbarTopAdSlotIds
+                        if (!isToolbarTopAdSlot && !AdElementClassifier.isAdvertisement(
                                 element.getAttribute("class").takeIf { element.tagName == "view" && it.isNotEmpty() }
                                     ?: element.tagName,
                                 element.getAttribute("android:id").ifEmpty { null },
@@ -177,6 +183,9 @@ internal val chMateResourcePatch = resourcePatch {
                             continue
                         }
 
+                        if (isToolbarTopAdSlot && element.getAttribute("android:tag").isEmpty()) {
+                            element.setAttribute("android:tag", ToolbarTopAdSlotDetector.MARKER_TAG)
+                        }
                         element.setAttribute("android:layout_height", "0dp")
                         element.setAttribute("android:minHeight", "0dp")
                         element.setAttribute("android:visibility", "gone")
