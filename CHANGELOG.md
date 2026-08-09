@@ -4,8 +4,11 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-09
+
 ### Added
 
+- ReVanced Manager が直接読み込める `.rvp` と SHA-256 を、タグとバージョンの一致確認、テスト、Lint、再検証を経て GitHub Release へ公開する workflow
 - ChMate の静的・動的広告 View を高さゼロにする resource / runtime patch
 - 既知広告ホストと広告 SDK 起点の通信を遮断する bytecode patch
 - HTTP、WebView、`http.agent` に適用する User-Agent 設定
@@ -24,7 +27,10 @@
 - APK直下へ難読化された画像・binary XML resourceを標準resource directoryへ復元
 - 実機計測で判明したFirebase Analytics / Crashlytics / Performanceの収集経路をmanifestで無効化し、関連テレメトリホストも接続前に遮断
 - ChMateが組み立てた最終User-Agentを安定した`Monazilla/1.00`リテラルで検出し、設定値を接尾辞として付加するのではなくHTTPヘッダー全体へ適用
+- Apktoolが名前空間なしで復号したChMate独自layout属性を`app:`名前空間へ戻し、元resource tableからenum / flagの実値を復元することで、タイトル幅、スレッド一覧の下引き更新、スレッド末尾の上引き更新、ID行の空白タップとIDタップによる同IDポップアップの退行を修正
 
 ### Security
 
+- Android / Gradle の build・test tooling が推移的に解決していた Netty、Bouncy Castle、Protobuf、Commons Lang、Apache HttpClient を既知脆弱性の修正版へ統一
+- v1.0.0 の依存解決結果を固定し、公開前の既知脆弱性検査を再現可能にする dependency lock
 - GitHub Packages token を環境変数だけから受け取り、リポジトリへ保存しない構成
