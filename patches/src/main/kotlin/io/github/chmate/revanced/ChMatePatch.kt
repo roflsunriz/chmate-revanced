@@ -14,6 +14,7 @@ val chMatePatch = bytecodePatch(
     extendWith("extensions/chmate.rve")
 
     apply {
+        patchIntegrityChecks()
         patchNetworkBoundaries()
         renameSanitizedManifestClasses()
     }

@@ -11,6 +11,7 @@ ChMate (`jp.co.airfront.android.a2chMate`) 向けの ReVanced Patch です。ChM
 - 広告 SDK の自動初期化 component と、公開されている初期化・広告 request entry point を無効化する
 - HTTP ヘッダー、`http.agent`、WebView に設定可能な User-Agent を適用する
 - 独立した設定画面から保存・既定値への復元・ChMate のワンボタン再起動を行う
+- 再署名された APK を異常終了させる署名整合性チェックを、結果配列の比較構造に限定して回避する
 - 設定画面を日本語、英語、中国語、ヒンディー語、スペイン語、フランス語、アラビア語、ポルトガル語、ベンガル語、ロシア語、ウルドゥー語で表示する
 
 設定画面はパッチ適用後に追加される「ChMate ReVanced」ランチャーアイコンから開きます。空欄を保存すると ChMate 本来の User-Agent に戻ります。
@@ -59,13 +60,14 @@ ChMate APK や patch 済み APK はこのリポジトリで配布しません。
 ## 現在の検証状況
 
 - 拡張機能: Android 6 以上向け Debug / Release コンパイル、DEX 化、JUnit、Android Lint 成功
-- patch の純粋ロジック: 広告要素分類の JUnit を実装
+- patch の純粋ロジック: 広告要素分類、署名整合性チェック検出、設定 Activity 生成の JUnit を実装
 - patch bundle 全体: 公式 ReVanced CLI 6.0.0 で `.rvp` の読込、resource / DEX patch、zipalign、署名に成功
 - APK 適用: `0.8.10.165`、`0.8.10.179`、`0.8.10.202 dev`、`0.8.10.241` の4世代で成功
 - 構造検証: 全4世代で元の launcher、追加した設定 Activity / Provider、拡張DEX、署名を確認
 - 広告 component: 検出した SDK component を各世代で30/30、35/35、6/6、29/29件無効化済み
 - XAPK: `0.8.10.179` の20 APK、`0.8.10.241` の4 APKを同一証明書で再署名し、split setを再構成済み
-- 未実施: 接続端末がないため、インストール、画面上の広告高さ、User-Agent、再起動、パケット通信の実機確認
+- 実機起動: Pixel 10a / Android 17 へ `0.8.10.241` の split set をインストールし、本体の利用規約画面と追加設定画面が異常終了せず起動することを確認
+- 未実施: スレッド画面上の広告高さ、User-Agent の送信値、ワンボタン再起動、広告 SDK / 既知広告ホストのパケット通信確認
 
 検証用 APK を用意した後の手順と合格条件は [how-to-update.md](how-to-update.md) にあります。
 

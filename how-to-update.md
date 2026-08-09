@@ -53,6 +53,7 @@ APK はリポジトリ外で管理します。
 - 正常通信まで止まる: 広すぎる host suffix または class marker を取り除き、SDK 固有の条件へ狭める。
 - User-Agent が変わらない: 実際のクライアントが使う header setter / request builder の method reference を追加する。
 - 再起動できない: patch 後 manifest の SettingsActivity metadata と元の launcher Activity 名を照合する。
+- 再署名後の起動直後に FileProvider の `onCreate`、不自然な `NullPointerException`、巨大配列確保の `OutOfMemoryError` で終了する: 署名整合性チェックの結果配列比較が変化していないか確認し、難読化クラス名ではなく配列読出しと失敗分岐の構造を限定して更新する。
 
 ## 5. リリース前
 

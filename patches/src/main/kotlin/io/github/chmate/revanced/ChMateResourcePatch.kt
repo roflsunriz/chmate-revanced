@@ -4,6 +4,7 @@ import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.ResourcePatchContext
 import app.revanced.patcher.patch.resourcePatch
 import java.io.File
+import org.w3c.dom.Document
 import org.w3c.dom.Element
 
 private const val SETTINGS_ACTIVITY = "app.revanced.extension.chmate.SettingsActivity"
@@ -26,28 +27,7 @@ internal val chMateResourcePatch = resourcePatch {
             application.disableAdSdkComponents()
 
             if (!application.hasComponent("activity", SETTINGS_ACTIVITY)) {
-                val activity = document.createElement("activity").apply {
-                    setAttribute("android:name", SETTINGS_ACTIVITY)
-                    setAttribute("android:exported", "true")
-                    setAttribute("android:excludeFromRecents", "true")
-                    setAttribute("android:label", "ChMate ReVanced")
-                    setAttribute("android:process", ":revanced_settings")
-                    setAttribute("android:theme", "@android:style/Theme.Material.Light.NoActionBar")
-
-                    appendChild(document.createElement("intent-filter").apply {
-                        appendChild(document.createElement("action").apply {
-                            setAttribute("android:name", ACTION_MAIN)
-                        })
-                        appendChild(document.createElement("category").apply {
-                            setAttribute("android:name", CATEGORY_LAUNCHER)
-                        })
-                    })
-                    appendChild(document.createElement("meta-data").apply {
-                        setAttribute("android:name", MAIN_ACTIVITY_METADATA)
-                        setAttribute("android:value", mainActivity)
-                    })
-                }
-                application.appendChild(activity)
+                application.addSettingsActivity(document, mainActivity)
             }
 
             if (!application.hasComponent("provider", BOOTSTRAP_PROVIDER)) {
@@ -165,6 +145,29 @@ internal val chMateResourcePatch = resourcePatch {
                 }
             }
     }
+}
+
+internal fun Element.addSettingsActivity(document: Document, mainActivity: String) {
+    appendChild(document.createElement("activity").apply {
+        setAttribute("android:name", SETTINGS_ACTIVITY)
+        setAttribute("android:exported", "true")
+        setAttribute("android:excludeFromRecents", "true")
+        setAttribute("android:label", "ChMate ReVanced")
+        setAttribute("android:theme", "@android:style/Theme.Material.Light.NoActionBar")
+
+        appendChild(document.createElement("intent-filter").apply {
+            appendChild(document.createElement("action").apply {
+                setAttribute("android:name", ACTION_MAIN)
+            })
+            appendChild(document.createElement("category").apply {
+                setAttribute("android:name", CATEGORY_LAUNCHER)
+            })
+        })
+        appendChild(document.createElement("meta-data").apply {
+            setAttribute("android:name", MAIN_ACTIVITY_METADATA)
+            setAttribute("android:value", mainActivity)
+        })
+    })
 }
 
 private fun ResourcePatchContext.sourceApkFile(): File {

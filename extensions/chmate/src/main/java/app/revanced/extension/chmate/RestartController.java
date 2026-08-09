@@ -1,14 +1,14 @@
 package app.revanced.extension.chmate;
 
 import android.app.Activity;
-import android.app.ActivityManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Process;
-
-import java.util.List;
+import android.os.SystemClock;
 
 final class RestartController {
     private static final String MAIN_ACTIVITY_METADATA = "app.revanced.extension.chmate.MAIN_ACTIVITY";
@@ -29,18 +29,25 @@ final class RestartController {
 
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
-        ActivityManager manager = activity.getSystemService(ActivityManager.class);
-        List<ActivityManager.RunningAppProcessInfo> processes = manager.getRunningAppProcesses();
-        if (processes != null) {
-            for (ActivityManager.RunningAppProcessInfo process : processes) {
-                if (activity.getPackageName().equals(process.processName) && process.pid != Process.myPid()) {
-                    Process.killProcess(process.pid);
-                }
-            }
+        AlarmManager manager = activity.getSystemService(AlarmManager.class);
+        if (manager == null) {
+            return false;
         }
 
-        activity.startActivity(launchIntent);
-        activity.finish();
+        PendingIntent restartIntent = PendingIntent.getActivity(
+                activity,
+                0,
+                launchIntent,
+                PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        manager.set(
+                AlarmManager.ELAPSED_REALTIME,
+                SystemClock.elapsedRealtime() + 500,
+                restartIntent
+        );
+
+        activity.finishAffinity();
+        Process.killProcess(Process.myPid());
         return true;
     }
 
