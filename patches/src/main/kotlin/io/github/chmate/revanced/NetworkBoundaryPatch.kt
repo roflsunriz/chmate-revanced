@@ -1,14 +1,17 @@
 package io.github.chmate.revanced
 
 import app.revanced.patcher.extensions.addInstructions
+import app.revanced.patcher.extensions.instructionsOrNull
 import app.revanced.patcher.extensions.replaceInstruction
 import app.revanced.patcher.patch.BytecodePatchContext
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 
 private const val EXTENSION_PREFIX = "Lapp/revanced/extension/chmate/"
 private const val AD_BLOCKER = "${EXTENSION_PREFIX}AdBlocker;"
@@ -35,7 +38,48 @@ internal fun BytecodePatchContext.patchNetworkBoundaries() {
             }
         },
     )
+    patchChMateUserAgentFactories()
 }
+
+private fun BytecodePatchContext.patchChMateUserAgentFactories() {
+    transformInstructions(
+        match = { classDef, method, instruction, index ->
+            if (classDef.type.startsWith(EXTENSION_PREFIX) || method.returnType != "Ljava/lang/String;") {
+                return@transformInstructions null
+            }
+            val returnInstruction = instruction as? OneRegisterInstruction
+                ?: return@transformInstructions null
+            if (instruction.opcode != Opcode.RETURN_OBJECT || !method.containsChMateUserAgentLiteral()) {
+                return@transformInstructions null
+            }
+            index to returnInstruction.registerA
+        },
+        transform = { method, (index, register) ->
+            val invoke = if (register > 15) {
+                "invoke-static/range { v$register .. v$register }"
+            } else {
+                "invoke-static { v$register }"
+            }
+            method.addInstructions(
+                index,
+                """
+                    $invoke, $USER_AGENT->resolve(Ljava/lang/String;)Ljava/lang/String;
+                    move-result-object v$register
+                """.trimIndent(),
+            )
+        },
+    )
+}
+
+private fun com.android.tools.smali.dexlib2.iface.Method.containsChMateUserAgentLiteral(): Boolean {
+    val instructions = instructionsOrNull ?: return false
+    return instructions.any { instruction ->
+        val value = ((instruction as? ReferenceInstruction)?.reference as? StringReference)?.string
+        value != null && isChMateUserAgentLiteral(value)
+    }
+}
+
+internal fun isChMateUserAgentLiteral(value: String) = value.startsWith("Monazilla/1.00")
 
 private fun rewrite(
     index: Int,

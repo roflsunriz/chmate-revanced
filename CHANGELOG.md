@@ -23,6 +23,7 @@
 - 数値だけのresource名・参照・ファイル名を、public IDを維持したままAAPT2互換名へ正規化
 - APK直下へ難読化された画像・binary XML resourceを標準resource directoryへ復元
 - 実機計測で判明したFirebase Analytics / Crashlytics / Performanceの収集経路をmanifestで無効化し、関連テレメトリホストも接続前に遮断
+- ChMateが組み立てた最終User-Agentを安定した`Monazilla/1.00`リテラルで検出し、設定値を接尾辞として付加するのではなくHTTPヘッダー全体へ適用
 
 ### Security
 
