@@ -101,6 +101,34 @@ class ResourceNameSanitizerTest {
     }
 
     @Test
+    fun `include layout remains an unqualified framework syntax attribute`() {
+        val attrs = "<resources><attr name=\"layout\" format=\"reference\" /><attr name=\"autoBorder\" format=\"boolean\" /></resources>"
+        val layout = """
+            <o.Root xmlns:android="http://schemas.android.com/apk/res/android">
+                <o.Container autoBorder="true">
+                    <include android:id="@id/editor" layout="@layout/editor" />
+                </o.Container>
+                <o.CustomView layout="@layout/custom" />
+            </o.Root>
+        """.trimIndent()
+
+        assertEquals(
+            """
+                <o.Root xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+                    <o.Container app:autoBorder="true">
+                        <include android:id="@id/editor" layout="@layout/editor" />
+                    </o.Container>
+                    <o.CustomView app:layout="@layout/custom" />
+                </o.Root>
+            """.trimIndent(),
+            ResourceNameSanitizer.qualifyApplicationAttributes(
+                layout,
+                ResourceNameSanitizer.applicationAttributeNames(attrs),
+            ),
+        )
+    }
+
+    @Test
     fun `numeric file names are prefixed while ordinary names remain unchanged`() {
         assertEquals("res_2130771968.xml", ResourceNameSanitizer.sanitizeFileName("2130771968.xml"))
         assertEquals("res_2131099999.png", ResourceNameSanitizer.sanitizeFileName("2131099999.png"))

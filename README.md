@@ -49,7 +49,7 @@ $env:ORG_GRADLE_PROJECT_githubPackagesPassword = '<read:packagesトークン>'
 .\gradlew.bat :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid
 ```
 
-成果物は `patches/build/libs/patches-1.0.2.rvp` です。バージョンは `gradle.properties` の `version` に従います。
+成果物は `patches/build/libs/patches-1.0.3.rvp` です。バージョンは `gradle.properties` の `version` に従います。
 
 認証方法の詳細は [GitHub Packages の公式ドキュメント](https://docs.github.com/ja/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry)を参照してください。
 
@@ -70,6 +70,7 @@ ChMate APK や patch 済み APK はこのリポジトリで配布しません。
 - patch の純粋ロジック: 広告要素分類、署名整合性チェック検出、設定 Activity と本体設定 Preference 生成の JUnit を実装
 - patch bundle 全体: 公式 ReVanced CLI 6.0.0 で `.rvp` の読込、resource / DEX patch、zipalign、署名に成功
 - ReVanced Manager（2026-08-09）: AQUOS SH-R80P / Android 16、公式ReVanced Manager 2.6.0へ`patches-1.0.2.rvp`をストレージから追加し、`0.8.10.241`の準備、resource / DEX patch、resource再コンパイル、zipalign、署名、patched APK保存がすべて成功
+- 書き込み画面（2026-08-10）: AQUOS SH-R80P / Android 16、ChMate `0.8.10.241`でv1.0.2の書き込み欄を開くと`<include>`の`layout`属性欠落による`InflateException`で終了することを再現。公式ReVanced Manager 2.6.0がv1.0.3候補で生成・署名したAPKをデータ保持更新し、既存スレッドの書き込み欄と新規スレッド作成画面が終了せず開くことを確認
 - APK 適用: `0.8.10.165`、`0.8.10.179`、`0.8.10.202 dev`、`0.8.10.241` の4世代で成功
 - 構造検証: 全4世代で元の launcher、本体設定に追加した Preference、非公開の設定 Activity / Provider、拡張DEX、署名を確認
 - 広告 component: 検出した SDK component を各世代で30/30、35/35、6/6、29/29件無効化済み

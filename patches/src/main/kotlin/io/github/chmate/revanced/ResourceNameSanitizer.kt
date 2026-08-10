@@ -39,7 +39,7 @@ internal object ResourceNameSanitizer {
         var changed = false
         var result = unqualifiedXmlAttribute.replace(xml) { match ->
             val name = match.groupValues[2]
-            if (name !in attributeNames) {
+            if (name !in attributeNames || isFrameworkSyntaxAttribute(xml, match.range.first, name)) {
                 match.value
             } else {
                 changed = true
@@ -53,6 +53,17 @@ internal object ResourceNameSanitizer {
             match.range,
             "${match.groupValues[1]}<${match.groupValues[2]} xmlns:app=\"http://schemas.android.com/apk/res-auto\"",
         )
+    }
+
+    private fun isFrameworkSyntaxAttribute(xml: String, attributeOffset: Int, name: String): Boolean {
+        if (name != "layout") return false
+
+        val tagStart = xml.lastIndexOf('<', attributeOffset)
+        val precedingTagEnd = xml.lastIndexOf('>', attributeOffset)
+        if (tagStart <= precedingTagEnd) return false
+
+        return xml.regionMatches(tagStart + 1, "include", 0, "include".length) &&
+            xml.getOrNull(tagStart + 1 + "include".length)?.let { it.isWhitespace() || it == '>' } != false
     }
 
     fun sanitizeXml(

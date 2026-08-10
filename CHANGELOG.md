@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-08-10
+
+### Fixed
+
+- ChMate独自の`layout`属性と同名でも、`<include>`の必須`layout`属性を`app:`名前空間へ変更しないようにし、書き込み欄と新規スレッド作成を開く際の`InflateException`を修正
+
 ## [1.0.2] - 2026-08-09
 
 ### Fixed
