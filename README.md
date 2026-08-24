@@ -19,9 +19,15 @@ ChMate (`jp.co.airfront.android.a2chMate`) 向けの ReVanced Patch です。ChM
 
 ## ダウンロード
 
-[GitHub Releases](https://github.com/roflsunriz/chmate-revanced/releases) から `patches-<version>.rvp` をダウンロードしてください。ReVanced Manager では Patches 画面の追加操作から「ストレージから選択」を選び、`.rvp` をそのまま読み込みます。ZIP への展開は不要です。
+[GitHub Releases](https://github.com/roflsunriz/chmate-revanced/releases) で配布しています。ReVanced Manager で更新を追従する場合は、Patches 画面の追加操作から「URLを入力」を選び、次の固定 URL を登録してください。
 
-同じ Release にある `.rvp.sha256` はダウンロードした patch bundle の照合用です。ChMate APK、XAPK、patch 済み APK は配布しません。
+```text
+https://github.com/roflsunriz/chmate-revanced/releases/latest/download/patches.json
+```
+
+手動で追加する場合は `patches-<version>.rvp` をダウンロードし、「ストレージから選択」で `.rvp` をそのまま読み込みます。ZIP への展開は不要です。
+
+同じ Release にある `patches.json` はその版の `.rvp` を参照する ReVanced API 形式の更新情報、`.rvp.sha256` はダウンロードした patch bundle の照合用です。ChMate APK、XAPK、patch 済み APK は配布しません。
 
 ## 互換性の考え方
 

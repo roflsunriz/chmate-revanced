@@ -134,6 +134,7 @@ jobs:
           tag="v$version"
           bundle="release-assets/patches-$version.rvp"
           checksum="$bundle.sha256"
+          manifest="release-assets/patches.json"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" "$bundle" "$checksum" --clobber
             gh release edit "$tag" --title "$tag" --notes-file release-notes.md
@@ -142,4 +143,48 @@ jobs:
               --verify-tag \
               --title "$tag" \
               --notes-file release-notes.md
+          fi
+
+          created_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" \
+              --jq '.created_at | sub("\\.[0-9]+Z$"; "") | sub("Z$"; "")'
+          )"
+          download_url="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/patches-$version.rvp"
+          jq -n \
+            --arg version "$tag" \
+            --arg created_at "$created_at" \
+            --rawfile description release-notes.md \
+            --arg download_url "$download_url" \
+            '{
+              version: $version,
+              created_at: $created_at,
+              description: $description,
+              download_url: $download_url,
+              signature_download_url: null
+            }' > "$manifest"
+
+          jq -e \
+            --arg version "$tag" \
+            --arg created_at "$created_at" \
+            --arg download_url "$download_url" \
+            '.version == $version and
+             .created_at == $created_at and
+             (.description | type == "string") and
+             .download_url == $download_url and
+             .signature_download_url == null' \
+            "$manifest" >/dev/null
+
+          gh release upload "$tag" "$manifest" --clobber
+
+          expected_assets="$(printf '%s\n' \
+            "patches-$version.rvp" \
+            "patches-$version.rvp.sha256" \
+            'patches.json' | sort)"
+          actual_assets="$(
+            gh release view "$tag" --json assets --jq '.assets[].name' | sort
+          )"
+          if [[ "$actual_assets" != "$expected_assets" ]]; then
+            echo 'GitHub Release assets do not match the expected set:' >&2
+            printf '%s\n' "$actual_assets" >&2
+            exit 1
           fi

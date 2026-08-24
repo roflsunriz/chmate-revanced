@@ -84,8 +84,8 @@ APK はリポジトリ外で管理します。
 5. クリーンビルドと全検証、依存関係の脆弱性検査を再実行する。
 6. `main` へ push した後、GitHub Actions の `Release` workflow を手動実行する。手動実行は Release を作らず、同じテスト、Lint、`.rvp` 生成、SHA-256 検証を行って Actions artifact を作るため、公開前確認に使う。
 7. artifact の内容をローカル成果物と照合し、問題がなければ注釈付きタグ `v<version>` を `gradle.properties` と同じ commit に作成して push する。
-8. タグ起点の `Release` workflow が成功し、GitHub Release に `patches-<version>.rvp` と `patches-<version>.rvp.sha256` の2資産だけが公開されたことを確認する。
+8. タグ起点の `Release` workflow が成功し、GitHub Release に `patches-<version>.rvp`、`patches-<version>.rvp.sha256`、`patches.json` の3資産だけが公開されたことを確認する。`patches.json` の `version` と `download_url` が同じタグと `.rvp` を指すことも確認する。
 
-Release workflow は ReVanced 公式と同じ `.rvp` 形式を直接配布します。ZIP は作りません。タグ名と `gradle.properties` の version が一致しない場合、release note がない場合、テスト・Lint・checksum 検証のいずれかが失敗した場合は公開しません。
+Release workflow は ReVanced 公式と同じ `.rvp` 形式を直接配布し、ReVanced Manager が URL から更新できる API 形式の `patches.json` も生成します。ZIP は作りません。タグ名と `gradle.properties` の version が一致しない場合、release note がない場合、テスト・Lint・checksum・`patches.json` の検証のいずれかが失敗した場合は公開しません。
 
 公開前に失敗した場合は修正して手動 workflow を再実行します。公開後に問題が見つかった場合は既存タグを付け替えず、修正版の patch version を上げて新しい Release を作ります。

@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- ReVanced Manager が固定 URL から patch bundle の更新を追従できるように、各 GitHub Release へ同じタグの `.rvp` を参照する ReVanced API 形式の `patches.json` を追加
+
 ## [1.0.3] - 2026-08-10
 
 ### Fixed
