@@ -23,4 +23,7 @@ Get-Content -Raw -LiteralPath .\COMMON-AGENTS.md
 - 過去のChMateバージョンと未来のChMateバージョンに渡って広く適用可能（ChMateのソースコード自身はMinify・難読化が施されている）
 
 ## Environment
-<必要に応じて適宜書き足すこと。>
+- Gradle実行はJDK 17を使う（CIはTemurin 17。2026-09-23時点のローカル例: `C:\Program Files\Eclipse Adoptium\jdk-17.0.18.8-hotspot` を `JAVA_HOME` に設定）。
+- GitHub Packages認証が必須のため `ORG_GRADLE_PROJECT_githubPackagesUsername` / `ORG_GRADLE_PROJECT_githubPackagesPassword` を環境変数で渡す（詳細はREADME参照）。
+- 依存更新時は `./gradlew --no-daemon :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid --write-locks` でlockfileを再生成し、同コマンド（`--write-locks` なし相当のCIと同じ範囲）が成功することを確認する。
+- JUnitのjupiterとlauncherは必ず同時更新する。片方だけでは `junit-bom` とDependency Lockingの厳密制約が不整合しCIのverifyが失敗する（2026-09-23のDependabot PR #2 / #4で確認）。
