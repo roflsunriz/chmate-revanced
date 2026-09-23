@@ -4,6 +4,6 @@ smali = "3.0.9"
 apktool = "2.10.1.1"
 
 [libraries]
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version = "5.13.4" }
-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version = "1.13.4" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version = "6.1.3" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version = "6.1.3" }
 apktool = { module = "app.revanced:apktool-lib", version.ref = "apktool" }
