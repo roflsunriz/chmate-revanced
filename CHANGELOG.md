@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Changed
+
+- 依存更新を安全に省力化するため、Dependabot の patch／minor PR を既存 CI の全チェック成功後に自動取り込みし、失敗ジョブを一度再実行する設定を追加した。
 ### Added
 
 - ReVanced Manager が固定 URL から patch bundle の更新を追従できるように、各 GitHub Release へ同じタグの `.rvp` を参照する ReVanced API 形式の `patches.json` を追加

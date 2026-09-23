@@ -89,3 +89,9 @@ APK はリポジトリ外で管理します。
 Release workflow は ReVanced 公式と同じ `.rvp` 形式を直接配布し、ReVanced Manager が URL から更新できる API 形式の `patches.json` も生成します。ZIP は作りません。タグ名と `gradle.properties` の version が一致しない場合、release note がない場合、テスト・Lint・checksum・`patches.json` の検証のいずれかが失敗した場合は公開しません。
 
 公開前に失敗した場合は修正して手動 workflow を再実行します。公開後に問題が見つかった場合は既存タグを付け替えず、修正版の patch version を上げて新しい Release を作ります。
+
+## Dependabot PR の更新
+
+前提は `.github/dependabot.yml` と PR 用 CI（CI）です。更新 PR の head SHA と `gh pr checks <PR番号>` の結果を確認してください。patch／minor は全チェック成功後に自動取り込みされます。初回 CI 失敗は failed jobs のみを 1 回再実行し、再失敗した PR は残して手動で修正します。
+
+設定を変えたときは `actionlint .github/workflows/dependabot-automation.yml` と実際の PR の Actions 結果を確認します。問題があれば呼び出し先の共通 workflow SHA を直前の検証済み値へ戻すコミットを push します。取り込まれた依存更新に問題があれば通常の revert コミットで復旧します。
