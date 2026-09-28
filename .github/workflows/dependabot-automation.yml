@@ -26,3 +26,6 @@ jobs:
     with:
       ci_workflows: '["CI"]'
       callback_workflow_file: dependabot-automation.yml
+      autofix_command: './gradlew --no-daemon build --write-locks'
+      autofix_paths: '["extensions/chmate/gradle.lockfile","patches/gradle.lockfile","settings-gradle.lockfile"]'
+      autofix_workflow_files: '["ci.yml"]'
