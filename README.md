@@ -37,11 +37,11 @@ https://github.com/roflsunriz/chmate-revanced/releases/latest/download/patches.j
 - 通信は `InetAddress`、`URL`、WebView、一般的な HTTP ヘッダー / URL builder 呼び出しを命令参照で判定する
 - 元のランチャー Activity 名はパッチ時に manifest から取得して設定画面へ記録する
 
-この方式はバージョン固定の fingerprint より変更に強い一方、将来の ChMate がネイティブ通信、独自暗号化通信、未登録の広告 SDK、Compose など別の UI 実装へ移行した場合は更新が必要です。「通信を完全に遮断できたこと」は対象 APK と実機でのパケット確認をもって判定してください。
+この方式はバージョン固定の fingerprint より変更に強い一方、ChMate の実装によっては更新が必要です。たとえば、ネイティブ通信、独自暗号化通信、未登録の広告 SDK、Compose など別の UI 実装へ移行した場合が該当します。「通信を完全に遮断できたこと」は対象 APK と実機でのパケット確認をもって判定してください。
 
 ## ビルド
 
-必要なもの:
+ビルドには次のものが必要です。
 
 - JDK 17 以上
 - Android SDK Platform 34
