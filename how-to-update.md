@@ -28,7 +28,7 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 3. DEX 内の広告 SDK package と、利用している通信 API を列挙する。
 4. `res/layout*` の広告領域について View class、resource ID、tag を列挙する。
 5. 新しい SDK を発見した場合は、SDK class marker と固有ホストを追加する。一般サイトまで遮断する広すぎるドメインは追加しない。
-6. XAPK の場合は base APK だけでなく全 split APK の一覧も記録する。patch 後は全 split を同じ鍵で再署名し、`adb install-multiple` または対応する split installer で一括導入する。
+6. XAPK の場合は base APK だけでなく全 split APK の一覧も記録する。単一APKを使う場合は[APKEditor](https://github.com/REAndroid/APKEditor)で`java -jar <APKEditor.jar> merge -i <元XAPK> -o <統合APK> -validate-modules`を実行してからpatchする。分割のまま使う場合はpatch後に全splitを同じ鍵で再署名し、`adb install-multiple`または対応するsplit installerで一括導入する。base APKだけのManagerパッチ成功をインストール可能とみなさない。
 
 ## 3. patch 適用を検証する
 
@@ -52,6 +52,7 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 - 広告 SDK package から外部通信が出ない
 - 既知広告ホストへの DNS / TCP / TLS 接続が出ない
 - ニコニコ動画の既知の公開動画リンクでサムネイルが表示され、動画を開く元の導線が維持される。動画情報APIが失敗する場合も既存の画像取得処理へ戻る
+- ニコニコ動画の`sm`・`so`・`nm`リンクと、YouTube・Dailymotionなどの公開動画リンクで、提供されるメタデータのカードがレス内に表示される。カードのタップで省略表示を展開・復帰でき、表示設定をオフにしてスレッドを開き直すとカードが消える
 
 通信確認は少なくとも、コールドスタート、スレッド一覧、スレッド表示を数分ずつ行います。端末の Private DNS や別の広告ブロッカーは無効にし、この patch 単独の結果を測ります。
 

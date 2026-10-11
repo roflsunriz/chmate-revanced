@@ -11,11 +11,12 @@ final class NiconicoThumbnailResolverTest {
         assertEquals("sm9", NiconicoThumbnailResolver.videoId("https://www.nicovideo.jp/watch/sm9?ref=thread"));
         assertEquals("sm9", NiconicoThumbnailResolver.videoId("https://nico.ms/sm9"));
         assertEquals("sm123", NiconicoThumbnailResolver.videoId("https://sp.nicovideo.jp/watch/sm123"));
+        assertEquals("so44540860", NiconicoThumbnailResolver.videoId("https://www.nicovideo.jp/watch/so44540860"));
+        assertEquals("nm6049209", NiconicoThumbnailResolver.videoId("https://nico.ms/nm6049209"));
         assertNull(NiconicoThumbnailResolver.videoId("https://nicovideo.jp.evil.example/watch/sm9"));
         assertNull(NiconicoThumbnailResolver.videoId("javascript://www.nicovideo.jp/watch/sm9"));
         assertNull(NiconicoThumbnailResolver.videoId("https://www.nicovideo.jp/watch/sm9evil"));
         assertNull(NiconicoThumbnailResolver.videoId("https://www.nicovideo.jp/watch/lv123"));
-        assertNull(NiconicoThumbnailResolver.videoId("https://www.nicovideo.jp/watch/nm123"));
     }
 
     @Test

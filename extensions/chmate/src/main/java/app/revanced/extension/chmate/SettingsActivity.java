@@ -10,8 +10,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Locale;
 
 public final class SettingsActivity extends Activity {
     private SettingsStrings strings;
@@ -41,6 +44,22 @@ public final class SettingsActivity extends Activity {
         descriptionParams.topMargin = dp(12);
         descriptionParams.bottomMargin = dp(24);
         content.addView(description, descriptionParams);
+
+        Switch videoMetadataSwitch = new Switch(this);
+        videoMetadataSwitch.setText(VideoMetadataStrings.setting(Locale.getDefault()));
+        videoMetadataSwitch.setChecked(UserAgentOverride.preferences(this)
+                .getBoolean(VideoMetadataBridge.ENABLED_KEY, true));
+        videoMetadataSwitch.setOnClickListener(view -> {
+            boolean enabled = videoMetadataSwitch.isChecked();
+            if (!UserAgentOverride.preferences(this).edit()
+                    .putBoolean(VideoMetadataBridge.ENABLED_KEY, enabled).commit()) {
+                videoMetadataSwitch.setChecked(!enabled);
+                Toast.makeText(this, strings.saveFailed, Toast.LENGTH_LONG).show();
+            }
+        });
+        LinearLayout.LayoutParams videoMetadataParams = matchWrap();
+        videoMetadataParams.bottomMargin = dp(20);
+        content.addView(videoMetadataSwitch, videoMetadataParams);
 
         TextView label = new TextView(this);
         label.setText(strings.userAgent);

@@ -1,12 +1,19 @@
 # 検証手順
 
-## 2026-10-11: ニコニコ動画サムネイル修正（実機確認前）
+## 2026-10-11: ニコニコ動画サムネイルと動画情報
 
 - 公式の `https://ext.nicovideo.jp/api/getthumbinfo/sm9` がHTTP 200のXMLを返し、`thumbnail_url` が HTTPS の `nimg.jp` 配下を指すことを確認した。画像URLもHTTP 200のJPEGを返した。
 - `NiconicoThumbnailResolverTest` で動画IDのホスト・パス判定、成功応答、失敗応答、画像ホストとスキームの拒否を確認した。
 - JDK 17で `:patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid` が成功した。
 - 公式ReVanced CLI 6.0.0とAndroid SDK 34のAAPT2で、ChMate `0.8.10.165`、`0.8.10.179`、`0.8.10.202 dev`、`0.8.10.241` の4世代に同じRVPを適用し、DEX・リソース再構築と署名まで成功した。各APKの元DEXにサムネイル取得フックの参照が存在することを確認した。
-- 実機での画像表示と元リンクのタップ導線は未確認。テスト用公開動画を表示し、画像・タイトル位置・タップ先を確認する。
+- AQUOS SH-R80P / Android 16で、元XAPKのbase APKだけを公式Managerに渡した場合、patch・保存・署名は各工程成功したが更新インストールは`INSTALL_FAILED_MISSING_SPLIT`で失敗した。`APKEditor 1.4.9 merge -validate-modules`で4 APKを単一APKへ統合後、Managerで再patchしたAPKは現行アプリと署名が一致し、データを保持して更新・起動できた。baseだけのpatch成功をインストール可能と記録しない。
+- 初回実機候補では、本体「設定」→「ChMate ReVanced」で動画情報スイッチが既定オン、オフへ切り替えて画面を開き直しても保存されること、オンへ戻ることを確認した。既存のUser-Agent設定値は維持された。
+- 公開[5chスレッド](https://lavender.5ch.io/test/read.cgi/net/1536932691/)のレス88にある`sm33589395`で、サムネイル画像、タイトル・再生数・コメント数・マイリスト数・投稿日・投稿者・概要欄のカードをスレッド内に確認した。カードをタップすると高さが404pxから1584pxへ展開し、再タップで404pxへ戻った。サムネイルをタップすると元のニコニコ動画ページが開いた。
+- 初回候補でいいね数は表示されなかった。ページHTMLを単純に検索した値は4だった一方、対象動画ページの実表示と公式[スナップショット検索API](https://site.nicovideo.jp/search-api-docs/snapshot)の`contentId`完全一致結果は8だったため、現在のソースでは公式APIを使い、返却された動画IDを照合する。スナップショットAPIは日次更新である。
+- `so44540860`と`nm6049209`の`getthumbinfo`はHTTP 200かつ`status="ok"`を返す。新しいURL判定を含むRVPは4世代のAPKでCLI適用・再構築・署名に成功した。`nm`の実画面は未確認。
+- 2026-10-11の実機候補は公式Managerで準備2/2・パッチ2/2・保存2/2、署名成功後に更新インストールした。保存APKのSHA-256は`5A7D5DECFB181CAB4ECA7A153F8EDE82EF5A112F22B1C0DDBD7BC5C9EDA1214A`、署名証明書SHA-256は既存インストールと同じ`cddbc1c44abb5b0bc4efab2b9e82291758db40409082c7dda55cd1d771459ab0`。manifestにsplit必須指定は残っていない。
+- この実機候補で公開スレッドの`sm33589395`は画像とカードが表示され、再生3,687・コメント22・マイリスト37・いいね8を確認した。`sp.nicovideo.jp/watch/sm...`の画像・カードも表示した。NicoCache公開スレッドの`so44540860`は画像とカードが表示され、再生31,762・コメント1,483・マイリスト59・いいね386を確認した。YouTubeリンクでもタイトル・再生数・投稿日・投稿者・概要欄のカードが表示された。`nm`の実画面は未確認。
+- 動画情報カードはタップで展開し、再タップで省略表示へ戻る。設定スイッチをオフにしてスレッドを開き直すと、`so`サムネイルと元リンクを維持したままカードと余白が消え、次レスの開始位置が約579px上がった。スイッチはオンへ戻した。既存のUser-Agent値も保持された。
 
 ## Dependabot 自動処理（2026-09-23）
 

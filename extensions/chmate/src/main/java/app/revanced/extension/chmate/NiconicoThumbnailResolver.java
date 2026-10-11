@@ -12,8 +12,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class NiconicoThumbnailResolver {
-    private static final Pattern WATCH_PATH = Pattern.compile("^/watch/(sm[0-9]+)(?:/|$)");
-    private static final Pattern SHORT_PATH = Pattern.compile("^/(sm[0-9]+)(?:/|$)");
+    private static final Pattern WATCH_PATH = Pattern.compile("^/watch/((?:sm|nm|so)[0-9]+)(?:/|$)");
+    private static final Pattern SHORT_PATH = Pattern.compile("^/((?:sm|nm|so)[0-9]+)(?:/|$)");
     private static final Pattern THUMBNAIL = Pattern.compile("<thumbnail_url>\\s*([^<]+)\\s*</thumbnail_url>");
     private static final int MAX_RESPONSE_BYTES = 64 * 1024;
 
@@ -26,6 +26,14 @@ public final class NiconicoThumbnailResolver {
             return null;
         }
 
+        try {
+            return thumbnailUrl(fetchXml(id));
+        } catch (IOException | IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    static String fetchXml(String id) throws IOException {
         HttpURLConnection connection = null;
         try {
             URL endpoint = new URL("https://ext.nicovideo.jp/api/getthumbinfo/" + id);
@@ -34,13 +42,11 @@ public final class NiconicoThumbnailResolver {
             connection.setReadTimeout(5000);
             connection.setInstanceFollowRedirects(false);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                return null;
+                throw new IOException("Niconico thumbnail response: " + connection.getResponseCode());
             }
             try (InputStream input = connection.getInputStream()) {
-                return thumbnailUrl(readLimited(input));
+                return readLimited(input);
             }
-        } catch (IOException | IllegalArgumentException exception) {
-            return null;
         } finally {
             if (connection != null) {
                 connection.disconnect();
