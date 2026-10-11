@@ -1,5 +1,11 @@
 # 検証手順
 
+## 2026-10-11: push前の依存監査
+
+- Google OSV-Scanner 2.6.0で`settings-gradle.lockfile`、`patches/gradle.lockfile`、`extensions/chmate/gradle.lockfile`を検査した。更新前はNetty 4.1.136.Finalに3件、Bouncy Castle 1.84に2件のアドバイザリーを検出した。GitHubのDependabotアラート0件だけでは、このローカル結果を代用できなかった。
+- Maven Centralのmetadataと公式リリースを確認し、推移依存のNettyを4.2.19.Final、Bouncy Castleを1.86、Protobufを4.36.2、Commons Langを3.21.0、Apache HttpClientを4.5.14へ更新した。品質ゲートの`--write-locks`だけでは未実行のAndroidテスト内部configurationに旧版が残ったため、`resolveAdditionalLockConfigurations`で解決してlockfileを再生成した。
+- 再生成後の3つのlockfileに対するOSV-Scanner検査はexit code 0で、検出された既知脆弱性は0件。JDK 17で`:patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid`の`--write-locks`あり・なしが成功した。最新のReVanced `apktool-lib` 3.0.3-1は公開APIの名前空間と型が変わり、現行のbinary XML修復コードをコンパイルできないため、互換な最大の公開版2.10.1.1を維持した。
+
 ## 2026-10-11: 投稿間隔エラー後の自動再試行
 
 - `RetryCooldownTest`で秒数付きの日本語・英語エラー、Samba24の残り秒数、曖昧な文言と上限超過を確認した。`PostRetryBridgeTest`で返信・新規スレッド作成、再試行上限、元の件名保持、割り込み時の送信停止を確認した。

@@ -14,7 +14,14 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 .\gradlew.bat --refresh-dependencies :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid
 ```
 
-6. 全 configuration を解決できる状態で Gradle dependency locking を有効化し、`--write-locks` で lockfile を生成・差分確認する。
+6. 品質ゲートで使う configuration と、通常は未解決のAndroidテスト内部依存を両方解決して lockfile を生成・差分確認する。後者が古いままだと脆弱性検査に旧版が残る。
+
+```powershell
+.\gradlew.bat --no-daemon :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid --write-locks
+.\gradlew.bat --no-daemon :patches:resolveAdditionalLockConfigurations :extensions:chmate:resolveAdditionalLockConfigurations --write-locks
+.\gradlew.bat --no-daemon :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid
+```
+
 7. 利用可能な依存監査を実行し、検出事項、影響、対応を記録する。
 
 依存解決エラーを無視したり、不完全な lockfile を作ったり、Lint baseline で新しい警告を隠したりしません。

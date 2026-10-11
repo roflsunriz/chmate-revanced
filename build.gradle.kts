@@ -7,22 +7,34 @@ allprojects {
         lockAllConfigurations()
     }
 
+    tasks.register("resolveAdditionalLockConfigurations") {
+        doLast {
+            configurations.filter {
+                it.isCanBeResolved && (
+                    it.name.startsWith("_internal-unified-test-platform") ||
+                        it.name == "kotlinBouncyCastleConfiguration" ||
+                        it.name == "runtimeClasspath"
+                    )
+            }.forEach { it.resolve() }
+        }
+    }
+
     configurations.configureEach {
         resolutionStrategy.eachDependency {
             val securedVersion = when {
-                requested.group == "io.netty" -> "4.1.136.Final"
-                requested.group == "org.bouncycastle" -> "1.84"
-                requested.group == "com.google.protobuf" -> "3.25.5"
+                requested.group == "io.netty" -> "4.2.19.Final"
+                requested.group == "org.bouncycastle" -> "1.86"
+                requested.group == "com.google.protobuf" -> "4.36.2"
                 requested.group == "org.apache.commons" && requested.name == "commons-lang3" ->
-                    "3.18.0"
+                    "3.21.0"
                 requested.group == "org.apache.httpcomponents" && requested.name == "httpclient" ->
-                    "4.5.13"
+                    "4.5.14"
                 else -> null
             }
 
             if (securedVersion != null) {
                 useVersion(securedVersion)
-                because("v1.0.0 の依存監査で検出した既知脆弱性を含まない版へ統一するため")
+                because("依存監査で検出した既知脆弱性を修正し、推移依存を検証済みの版へ統一するため")
             }
         }
     }
