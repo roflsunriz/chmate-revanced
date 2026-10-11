@@ -2,6 +2,8 @@
 
 ## 2026-10-11: 高度NGルール
 
+ローカル模擬掲示板を再現する場合は、PCで`python .\scripts\mock-chmate-board.py`を起動し、別の端末で`adb reverse tcp:80 tcp:8765`を実行する。ChMateの「URLを指定して開く」から`http://127.0.0.1/test/read.cgi/test/1234567890/`を開く。検証後はサーバーをCtrl+Cで停止し、`adb reverse --remove tcp:80`を実行する。模擬掲示板はPCの`127.0.0.1:8765`だけで待ち受ける。
+
 - `AdvancedNgMatcherTest`で複数項目のAND、板/スレッドURL範囲、正規表現・あいまい一致・否定、数値範囲、投稿曜日・時刻、JSON保存/復元を確認した。`AdvancedNgBridgeTest`で既存NGビットの保持、本文一致、参照連鎖、入れ子の判定と早期return時の状態解放を確認した。JDK 17のテスト・Lint・RVPビルドが成功した。
 - 4世代のChMate APKへ同じRVPを公式CLIで適用した。0.8.10.241のパッチ後DEXでは、NG判定メソッドの入口でレスを保持し、通常・早期returnの双方でbridgeへ戻すこと、constructorの最初の型一致代入からレス番号・名前・メール・日付・本文・ID・アンカ配列を対応付けることを確認した。
 - 公式Managerで統合した0.8.10.241 APKをpatch・署名し、AQUOS SH-R80P / Android 16へデータ保持更新した。最終保存APKと端末のインストール済みbase APKのSHA-256はともに`6F541ADAD84D11078480B4E64C40B4BBB98C4F6D164F72427AFD151363D8D5A9`、署名証明書SHA-256は`cddbc1c44abb5b0bc4efab2b9e82291758db40409082c7dda55cd1d771459ab0`。
@@ -26,6 +28,7 @@
 
 ## 2026-10-11: 投稿間隔エラー後の自動再試行
 
+- 再現用のローカル模擬掲示板は`scripts/mock-chmate-board.py`を使う。初回POSTへ秒数付きエラー、2回目以降へ別のエラーを返し、POST間隔を標準出力へ記録する。待機秒数は起動前に`$env:MOCK_WAIT_SECONDS = '10'`などと設定できる。ADB reverseとURLは上記の高度NG節と同じで、公開掲示板へは送信しない。
 - `RetryCooldownTest`で秒数付きの日本語・英語エラー、Samba24の残り秒数、曖昧な文言と上限超過を確認した。`PostRetryBridgeTest`で返信・新規スレッド作成、再試行上限、元の件名保持、割り込み時の送信停止を確認した。
 - JDK 17の`:patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid`が成功した。公式ReVanced CLI 6.0.0でChMate `0.8.10.165`、`0.8.10.179`、`0.8.10.202 dev`、`0.8.10.241`へ同じRVPを適用し、各ログの`"ChMate ReVanced" succeeded`と再構築・署名成功を確認した。.165と.241のpatch後DEXでは、返信と新規スレッド作成の最終例外経路が通信callback解放後に再試行処理へ入ることも確認した。
 - 公式ManagerでChMate `0.8.10.241`の統合APKをpatch・署名し、AQUOS SH-R80P / Android 16へ既存データを保持して更新インストールした。保存APKのSHA-256は`A00CB2E6ED5C66922349A7304CE9215E2DCA32553AADF88EFAE7C8C4C8CEF0C0`。既存アプリと署名証明書が一致した。
