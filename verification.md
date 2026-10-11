@@ -5,7 +5,10 @@
 - `main`の機能実装コミット`7429e67`に対し、`CHANGELOG.md`、`README.md`、リリースノート、`gradle.properties`のバージョンだけを更新した状態で、JDK 17の`clean :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid`が成功した。
 - ローカルの`patches-1.1.0.rvp`は38エントリで、patchクラスと`extensions/chmate.rve`を含む。`.rve`の先頭はAndroid DEXの`dex\n035`で、APK/XAPKは含まない。SHA-256は`5ed722850d566f115b0d8a631996ba3335f5a74c76a62f7b5735e76b599bc7d4`。
 - OSV-Scanner 2.6.0で`patches/gradle.lockfile`の68パッケージと`extensions/chmate/gradle.lockfile`の176パッケージを再検査し、既知脆弱性の検出は0件だった。`settings-gradle.lockfile`は`empty=incomingCatalogForLibs0`のみで、同ツールの依存抽出対象にならない。GitHub Dependabotの未解決アラートも0件だった。
-- 実機と4世代CLIの機能確認は2026-10-11の各節に記録した。今回の版番号変更はpatchコードを変更しない。公開前のRelease workflowと公開資産は別途確認する。
+- 実機と4世代CLIの機能確認は2026-10-11の各節に記録した。今回の版番号変更はpatchコードを変更しない。
+- `main`のCI [run 38157211750](https://github.com/roflsunriz/chmate-revanced/actions/runs/38157211750)と、公開前のRelease workflow [run 38157222467](https://github.com/roflsunriz/chmate-revanced/actions/runs/38157222467)は、同じ`4a96cd1`で成功した。ローカルとActionsのRVPは38エントリ中manifestの`Timestamp`だけが異なり、Android DEXを含む実装部分は一致した。
+- 注釈付きタグ`v1.1.0`からの[公開workflow](https://github.com/roflsunriz/chmate-revanced/actions/runs/38157488780)は成功し、[Release](https://github.com/roflsunriz/chmate-revanced/releases/tag/v1.1.0)にRVP、SHA-256、`patches.json`の3資産だけを公開した。配布RVPのSHA-256は`d1d86da0f542a5f5dd3cce81d1781cc603089ba1c9a9b037e9b6ac0de9872c9d`で、同梱の照合ファイルと一致した。READMEの固定URLはHTTP 200で`v1.1.0`のJSONを返し、同じタグのRVPを指した。
+- AQUOSの公式ReVanced Manager 2.6.0で固定URLを自動更新付きソースとして追加すると、エラーなく`v1.1.0`・1パッチを表示した。前回ストレージから読み込んだ`1.0.3`ソースも端末に残るため、選択時は版番号を確認する。
 
 ## 2026-10-11: 高度NGルール
 

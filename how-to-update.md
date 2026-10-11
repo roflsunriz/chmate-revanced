@@ -95,8 +95,8 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 4. `docs/release-notes/v<version>.md` を作り、APK のハッシュ、端末 / Android 版、実測結果を記録する。ただし APK 自体は添付しない。
 5. クリーンビルドと全検証、依存関係の脆弱性検査を再実行する。
 6. `main` へ push した後、GitHub Actions の `Release` workflow を手動実行する。手動実行は Release を作らず、同じテスト、Lint、`.rvp` 生成、SHA-256 検証を行って Actions artifact を作るため、公開前確認に使う。
-7. artifact の内容をローカル成果物と照合し、問題がなければ注釈付きタグ `v<version>` を `gradle.properties` と同じ commit に作成して push する。
-8. タグ起点の `Release` workflow が成功し、GitHub Release に `patches-<version>.rvp`、`patches-<version>.rvp.sha256`、`patches.json` の3資産だけが公開されたことを確認する。`patches.json` の `version` と `download_url` が同じタグと `.rvp` を指すことも確認する。
+7. artifact の内容をローカル成果物と照合し、問題がなければ注釈付きタグ `v<version>` を `gradle.properties` と同じ commit に作成して push する。`.rvp` のmanifestにはビルド時刻が入るため、ローカルとActionsのファイル全体のSHA-256は一致しなくてもよい。ZIP内のエントリ名とmanifest以外の内容、manifestの版番号を比較する。
+8. タグ起点の `Release` workflow が成功し、GitHub Release に `patches-<version>.rvp`、`patches-<version>.rvp.sha256`、`patches.json` の3資産だけが公開されたことを確認する。配布ファイルのSHA-256を同梱の照合ファイルと比較し、`patches.json` の `version` と `download_url` が同じタグと `.rvp` を指すこと、READMEの固定URLから取得できること、ManagerがURLから読み込めることも確認する。
 
 Release workflow は ReVanced 公式と同じ `.rvp` 形式を直接配布し、ReVanced Manager が URL から更新できる API 形式の `patches.json` も生成します。ZIP は作りません。タグ名と `gradle.properties` の version が一致しない場合、release note がない場合、テスト・Lint・checksum・`patches.json` の検証のいずれかが失敗した場合は公開しません。
 
