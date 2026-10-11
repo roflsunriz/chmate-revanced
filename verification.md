@@ -1,5 +1,14 @@
 # 検証手順
 
+## 2026-10-11: 4chan・ふたばの画像掲示板
+
+- 代表の板を[4chan公式API](https://github.com/4chan/4chan-API/blob/master/pages/Endpoints_and_domains.md)が提供する`/po/`、[ふたば公式メニュー](https://www.2chan.net/bbsmenu.html)にある料理板`https://dat.2chan.net/t/futaba.htm`とした。前者の`catalog.json`はHTTP 200で11ページ、後者のHTMLはHTTP 200で`charset=Shift_JIS`を返した。
+- `ImageBoardClientTest`で4chan/ふたばURLの検証、スレッドURL、4chan JSON、ふたばのOP・返信HTML、HTMLエスケープと画像URLを確認した。JDK 17のテスト・Lint・RVPビルドが成功し、公式CLIで0.8.10.165、.179、.202 dev、.241の4世代に適用した。patch後manifestに`ImageBoardActivity`を確認した。CLIの`-t`一時ディレクトリ内にある同名APKはパッチ処理で変化しているため、互換性テストにはリポジトリ直下の原本を使った。
+- ManagerでRVPをストレージから追加し、0.8.10.241の統合APKをpatch・署名してAQUOS SH-R80P / Android 16へデータ保持更新した。署名証明書SHA-256は既存インストールと一致した。ChMate本体の設定から画像掲示板画面を開けた。
+- 4chan `/po/`で一覧152件、サムネイル、公開スレッド4レスを確認した。`boards.4channel.org`は端末内WebViewで`ERR_SSL_PROTOCOL_ERROR`となった一方、同じ板の`boards.4chan.org`は正常に開き、返信フォームとCloudflare CAPTCHAが表示された。最終候補で`boards.4channel.org`形式を入力すると後者へ正規化して一覧152件を開き、板の新規スレッドフォームの件名・本文・CAPTCHA欄も表示した。
+- ふたば料理板で一覧10件、サムネイル、返信を含むスレッド8レスを確認した。WebViewでサイトの返信フォームが表示された。初回候補で横にはみ出したフォームとURL入力後に残ったキーボードは、最終候補で表示縮小・フォームへのスクロール・キーボードを閉じる修正を実機確認した。件名が`無題`の場合はレス本文を一覧の見出しに使い、ステータスバーの文字も背景と区別できるようにした。最終候補のManager保存APKのSHA-256は`8E6EA245EBDA769C0271CD52F5E7E2C34C60F11E247E002E45DCBB7E0987DF73`、署名証明書SHA-256は`cddbc1c44abb5b0bc4efab2b9e82291758db40409082c7dda55cd1d771459ab0`。
+- 両サイトへの実投稿は行っていないため、送信成功と投稿後の更新は未確認。サイト固有のCAPTCHA・hidden値・添付は元サイトのフォームを使う。画面確認用URLの公開内容はサイト側で変わる。
+
 ## 2026-10-11: push前の依存監査
 
 - Google OSV-Scanner 2.6.0で`settings-gradle.lockfile`、`patches/gradle.lockfile`、`extensions/chmate/gradle.lockfile`を検査した。更新前はNetty 4.1.136.Finalに3件、Bouncy Castle 1.84に2件のアドバイザリーを検出した。GitHubのDependabotアラート0件だけでは、このローカル結果を代用できなかった。

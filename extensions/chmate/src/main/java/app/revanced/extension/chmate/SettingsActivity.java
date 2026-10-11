@@ -1,6 +1,7 @@
 package app.revanced.extension.chmate;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
@@ -60,6 +61,13 @@ public final class SettingsActivity extends Activity {
         LinearLayout.LayoutParams videoMetadataParams = matchWrap();
         videoMetadataParams.bottomMargin = dp(20);
         content.addView(videoMetadataSwitch, videoMetadataParams);
+
+        Button imageBoards = button(Locale.getDefault().getLanguage().equals("ja")
+                ? "画像掲示板（4chan・ふたば）" : "Imageboards (4chan and Futaba)",
+                view -> startActivity(new Intent(this, ImageBoardActivity.class)));
+        LinearLayout.LayoutParams imageBoardsParams = matchWrap();
+        imageBoardsParams.bottomMargin = dp(20);
+        content.addView(imageBoards, imageBoardsParams);
 
         TextView label = new TextView(this);
         label.setText(strings.userAgent);

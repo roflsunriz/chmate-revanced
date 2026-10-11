@@ -12,6 +12,7 @@ android {
 
 dependencies {
     testImplementation(libs.junit.jupiter)
+    testImplementation("org.json:json:20260814")
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
