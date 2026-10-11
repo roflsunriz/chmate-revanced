@@ -44,7 +44,7 @@ final class ImageBoardClient {
     private static final Pattern TAG = Pattern.compile("<[^>]*>");
     private static final Pattern NUMERIC_ENTITY = Pattern.compile("&#(x[0-9a-fA-F]+|[0-9]+);");
 
-    enum Kind { FOUR_CHAN, FUTABA }
+    enum Kind { FOUR_CHAN, FUTABA, JSCHAN }
 
     static final class Board {
         final Kind kind;
@@ -60,20 +60,27 @@ final class ImageBoardClient {
         }
 
         String catalogUrl() {
-            return kind == Kind.FOUR_CHAN
-                    ? "https://a.4cdn.org/" + code + "/catalog.json" : pageUrl;
+            if (kind == Kind.FOUR_CHAN) return "https://a.4cdn.org/" + code + "/catalog.json";
+            if (kind == Kind.JSCHAN) return "https://" + host + "/" + code + "/catalog.json";
+            return pageUrl;
         }
 
         String threadUrl(long id) {
-            return kind == Kind.FOUR_CHAN
-                    ? pageUrl + "thread/" + id
-                    : "https://" + host + "/" + code + "/res/" + id + ".htm";
+            if (kind == Kind.FOUR_CHAN) return pageUrl + "thread/" + id;
+            if (kind == Kind.JSCHAN) {
+                return "https://" + host + "/" + code + "/thread/" + id + ".html";
+            }
+            return "https://" + host + "/" + code + "/res/" + id + ".htm";
         }
 
         String threadDataUrl(long id) {
-            return kind == Kind.FOUR_CHAN
-                    ? "https://a.4cdn.org/" + code + "/thread/" + id + ".json"
-                    : threadUrl(id);
+            if (kind == Kind.FOUR_CHAN) {
+                return "https://a.4cdn.org/" + code + "/thread/" + id + ".json";
+            }
+            if (kind == Kind.JSCHAN) {
+                return "https://" + host + "/" + code + "/thread/" + id + ".json";
+            }
+            return threadUrl(id);
         }
     }
 
@@ -129,6 +136,12 @@ final class ImageBoardClient {
                 return new Board(Kind.FUTABA, host, code,
                         "https://" + host + "/" + code + "/futaba.htm");
             }
+            if (host.contains("2chan.net.") || host.contains("4chan.org.") ||
+                    host.contains("4channel.org.")) return null;
+            if (!host.equals("localhost") && !host.endsWith(".localhost")) {
+                return new Board(Kind.JSCHAN, host, code,
+                        "https://" + host + "/" + code + "/index.html");
+            }
         } catch (URISyntaxException ignored) {
             // The input field reports unsupported URLs to the user.
         }
@@ -143,12 +156,15 @@ final class ImageBoardClient {
                     !(board.kind == Kind.FOUR_CHAN
                             && "boards.4channel.org".equalsIgnoreCase(uri.getHost()))) return 0;
             String path = uri.getPath();
-            String prefix = board.kind == Kind.FOUR_CHAN
-                    ? "/" + board.code + "/thread/" : "/" + board.code + "/res/";
+            String prefix = board.kind == Kind.FUTABA
+                    ? "/" + board.code + "/res/" : "/" + board.code + "/thread/";
             if (!path.startsWith(prefix)) return 0;
             String number = path.substring(prefix.length());
             if (board.kind == Kind.FUTABA && number.endsWith(".htm")) {
                 number = number.substring(0, number.length() - 4);
+            }
+            if (board.kind == Kind.JSCHAN && number.endsWith(".html")) {
+                number = number.substring(0, number.length() - 5);
             }
             return number.matches("[0-9]{1,15}") ? Long.parseLong(number) : 0;
         } catch (URISyntaxException | NumberFormatException ignored) {
@@ -158,14 +174,16 @@ final class ImageBoardClient {
 
     static List<ThreadEntry> loadCatalog(Board board) throws IOException, JSONException {
         String data = fetchText(board.catalogUrl(), board.kind == Kind.FUTABA);
-        return board.kind == Kind.FOUR_CHAN
-                ? parseFourChanCatalog(board, data) : parseFutabaCatalog(board, data);
+        if (board.kind == Kind.FOUR_CHAN) return parseFourChanCatalog(board, data);
+        if (board.kind == Kind.JSCHAN) return parseJschanCatalog(board, data);
+        return parseFutabaCatalog(board, data);
     }
 
     static List<Post> loadThread(Board board, long id) throws IOException, JSONException {
         String data = fetchText(board.threadDataUrl(id), board.kind == Kind.FUTABA);
-        return board.kind == Kind.FOUR_CHAN
-                ? parseFourChanThread(board, data) : parseFutabaThread(board, data);
+        if (board.kind == Kind.FOUR_CHAN) return parseFourChanThread(board, data);
+        if (board.kind == Kind.JSCHAN) return parseJschanThread(board, data);
+        return parseFutabaThread(board, data);
     }
 
     static List<ThreadEntry> parseFourChanCatalog(Board board, String json) throws JSONException {
@@ -202,6 +220,58 @@ final class ImageBoardClient {
         return new Post(id, clean(object.optString("sub", "")),
                 clean(object.optString("name", "Anonymous")),
                 clean(object.optString("now", "")), clean(object.optString("com", "")), thumb, media);
+    }
+
+    static List<ThreadEntry> parseJschanCatalog(Board board, String json) throws JSONException {
+        JSONArray threads = new JSONArray(json);
+        List<ThreadEntry> result = new ArrayList<>();
+        for (int index = 0; index < threads.length(); index++) {
+            JSONObject item = threads.getJSONObject(index);
+            result.add(new ThreadEntry(jschanPost(board, item), item.optInt("replyposts", 0)));
+        }
+        return result;
+    }
+
+    static List<Post> parseJschanThread(Board board, String json) throws JSONException {
+        JSONObject thread = new JSONObject(json);
+        List<Post> result = new ArrayList<>();
+        result.add(jschanPost(board, thread));
+        JSONArray replies = thread.optJSONArray("replies");
+        if (replies != null) {
+            for (int index = 0; index < replies.length(); index++) {
+                result.add(jschanPost(board, replies.getJSONObject(index)));
+            }
+        }
+        return result;
+    }
+
+    private static Post jschanPost(Board board, JSONObject item) {
+        JSONArray files = item.optJSONArray("files");
+        String media = null;
+        String thumb = null;
+        if (files != null && files.length() > 0) {
+            JSONObject file = files.optJSONObject(0);
+            if (file != null) {
+                String filename = file.optString("filename", "");
+                String hash = file.optString("hash", "");
+                String thumbExtension = file.optString("thumbextension", "");
+                if (filename.matches("[a-fA-F0-9]{32,128}\\.[A-Za-z0-9]{1,8}")) {
+                    media = "https://" + board.host + "/file/" + filename;
+                }
+                if (file.optBoolean("hasThumb", false) &&
+                        hash.matches("[a-fA-F0-9]{32,128}") &&
+                        thumbExtension.matches("\\.[A-Za-z0-9]{1,8}")) {
+                    thumb = "https://" + board.host + "/file/thumb/" + hash + thumbExtension;
+                }
+            }
+        }
+        return new Post(item.optLong("postId", 0), clean(jsonString(item, "subject", "")),
+                clean(jsonString(item, "name", "Anon")), jsonString(item, "date", ""),
+                clean(jsonString(item, "message", "")), thumb, media);
+    }
+
+    private static String jsonString(JSONObject object, String key, String fallback) {
+        return object.isNull(key) ? fallback : object.optString(key, fallback);
     }
 
     static List<ThreadEntry> parseFutabaCatalog(Board board, String html) {
@@ -274,6 +344,8 @@ final class ImageBoardClient {
         matcher.appendTail(buffer);
         return buffer.toString().replace("&gt;", ">").replace("&lt;", "<")
                 .replace("&quot;", "\"").replace("&#39;", "'").replace("&nbsp;", " ")
+                .replace("&apos;", "'").replace("&ndash;", "–").replace("&mdash;", "—")
+                .replace("&hellip;", "…")
                 .replace("&amp;", "&").trim();
     }
 

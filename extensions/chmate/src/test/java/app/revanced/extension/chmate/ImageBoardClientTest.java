@@ -28,6 +28,14 @@ final class ImageBoardClientTest {
         assertNull(ImageBoardClient.parseBoard("http://dat.2chan.net/t/futaba.htm"));
         assertNull(ImageBoardClient.parseBoard("https://dat.2chan.net.evil.example/t/futaba.htm"));
         assertNull(ImageBoardClient.parseBoard("https://boards.4chan.org/../po/"));
+        ImageBoardClient.Board jschan = ImageBoardClient.parseBoard(
+                "https://zzzchan.xyz/tech/thread/898.html");
+        assertNotNull(jschan);
+        assertEquals(ImageBoardClient.Kind.JSCHAN, jschan.kind);
+        assertEquals("https://zzzchan.xyz/tech/catalog.json", jschan.catalogUrl());
+        assertEquals("https://zzzchan.xyz/tech/thread/898.json", jschan.threadDataUrl(898));
+        assertEquals(898, ImageBoardClient.parseThreadId(jschan,
+                "https://zzzchan.xyz/tech/thread/898.html"));
     }
 
     @Test
@@ -76,5 +84,29 @@ final class ImageBoardClientTest {
         assertEquals("https://i.4cdn.org/po/12345.png", catalog.get(0).mediaUrl);
         assertEquals("A\nB", ImageBoardClient.parseFourChanThread(board,
                 "{\"posts\":[" + entry + "]}").get(0).comment);
+    }
+
+    @Test
+    void parsesJschanCatalogThreadAndMedia() throws Exception {
+        ImageBoardClient.Board board = ImageBoardClient.parseBoard("https://zzzchan.xyz/tech/");
+        String hash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        String op = "{\"postId\":898,\"subject\":\"Technology\",\"message\":\"A<br>B\","
+                + "\"name\":\"Anon\",\"replyposts\":1,\"files\":[{\"filename\":\""
+                + hash + ".png\",\"hash\":\"" + hash
+                + "\",\"thumbextension\":\".jpg\",\"hasThumb\":true}]}";
+        List<ImageBoardClient.ThreadEntry> catalog = ImageBoardClient.parseJschanCatalog(board,
+                "[" + op + "]");
+        assertEquals(1, catalog.get(0).replies);
+        assertEquals("https://zzzchan.xyz/file/" + hash + ".png", catalog.get(0).mediaUrl);
+        assertEquals("https://zzzchan.xyz/file/thumb/" + hash + ".jpg",
+                catalog.get(0).thumbnailUrl);
+        List<ImageBoardClient.Post> posts = ImageBoardClient.parseJschanThread(board,
+                op.substring(0, op.length() - 1)
+                        + ",\"replies\":[{\"postId\":899,\"message\":\"Reply\"}]}");
+        assertEquals(2, posts.size());
+        assertEquals(899, posts.get(1).id);
+        assertEquals("A\nB", posts.get(0).comment);
+        assertEquals("", ImageBoardClient.parseJschanCatalog(board,
+                "[{\"postId\":900,\"message\":null}]").get(0).comment);
     }
 }

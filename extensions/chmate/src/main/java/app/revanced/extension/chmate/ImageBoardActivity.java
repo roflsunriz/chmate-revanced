@@ -144,8 +144,8 @@ public final class ImageBoardActivity extends Activity {
     private void openBoard(String input) {
         ImageBoardClient.Board parsed = ImageBoardClient.parseBoard(input);
         if (parsed == null) {
-            urlInput.setError(label("4chanまたはふたばのHTTPS板URLを入力してください",
-                    "Enter a 4chan or Futaba HTTPS board URL"));
+            urlInput.setError(label("4chan・ふたば・jschanのHTTPS板URLを入力してください",
+                    "Enter a 4chan, Futaba, or jschan HTTPS board URL"));
             return;
         }
         board = parsed;
@@ -230,9 +230,10 @@ public final class ImageBoardActivity extends Activity {
         postWebView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String pageUrl) {
-                if (view == postWebView && board.kind == ImageBoardClient.Kind.FUTABA
+                if (view == postWebView && board.kind != ImageBoardClient.Kind.FOUR_CHAN
                         && pageUrl.startsWith("https://" + board.host + "/")) {
-                    view.evaluateJavascript("(function(){var form=document.getElementById('fm');"
+                    view.evaluateJavascript("(function(){var form=document.getElementById('fm')"
+                            + "||document.getElementById('postform');"
                             + "if(form)form.scrollIntoView();})();", null);
                 }
             }
