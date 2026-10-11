@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-12
+
 ### Security
 
 - ビルド時とAndroidテスト用の推移依存に残った既知脆弱性を解消するため、NettyとBouncy Castleを修正版へ更新し、通常の品質ゲートでは未解決のlockfileも再生成できるようにした。

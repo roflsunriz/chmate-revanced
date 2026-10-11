@@ -1,5 +1,12 @@
 # 検証手順
 
+## 2026-10-12: v1.1.0 公開前検証
+
+- `main`の機能実装コミット`7429e67`に対し、`CHANGELOG.md`、`README.md`、リリースノート、`gradle.properties`のバージョンだけを更新した状態で、JDK 17の`clean :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid`が成功した。
+- ローカルの`patches-1.1.0.rvp`は38エントリで、patchクラスと`extensions/chmate.rve`を含む。`.rve`の先頭はAndroid DEXの`dex\n035`で、APK/XAPKは含まない。SHA-256は`5ed722850d566f115b0d8a631996ba3335f5a74c76a62f7b5735e76b599bc7d4`。
+- OSV-Scanner 2.6.0で`patches/gradle.lockfile`の68パッケージと`extensions/chmate/gradle.lockfile`の176パッケージを再検査し、既知脆弱性の検出は0件だった。`settings-gradle.lockfile`は`empty=incomingCatalogForLibs0`のみで、同ツールの依存抽出対象にならない。GitHub Dependabotの未解決アラートも0件だった。
+- 実機と4世代CLIの機能確認は2026-10-11の各節に記録した。今回の版番号変更はpatchコードを変更しない。公開前のRelease workflowと公開資産は別途確認する。
+
 ## 2026-10-11: 高度NGルール
 
 ローカル模擬掲示板を再現する場合は、PCで`python .\scripts\mock-chmate-board.py`を起動し、別の端末で`adb reverse tcp:80 tcp:8765`を実行する。ChMateの「URLを指定して開く」から`http://127.0.0.1/test/read.cgi/test/1234567890/`を開く。検証後はサーバーをCtrl+Cで停止し、`adb reverse --remove tcp:80`を実行する。模擬掲示板はPCの`127.0.0.1:8765`だけで待ち受ける。

@@ -68,7 +68,7 @@ $env:ORG_GRADLE_PROJECT_githubPackagesPassword = '<read:packagesトークン>'
 .\gradlew.bat :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid
 ```
 
-成果物は `patches/build/libs/patches-1.0.3.rvp` です。バージョンは `gradle.properties` の `version` に従います。
+成果物は `patches/build/libs/patches-<version>.rvp` です。`<version>` は `gradle.properties` の `version` に従います。
 
 認証方法の詳細は [GitHub Packages の公式ドキュメント](https://docs.github.com/ja/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry)を参照してください。
 
