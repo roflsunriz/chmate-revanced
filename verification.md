@@ -1,13 +1,22 @@
 # 検証手順
 
-## 2026-10-11: 4chan・ふたばの画像掲示板
+## 2026-10-11: 高度NGルール
 
+- `AdvancedNgMatcherTest`で複数項目のAND、板/スレッドURL範囲、正規表現・あいまい一致・否定、数値範囲、投稿曜日・時刻、JSON保存/復元を確認した。`AdvancedNgBridgeTest`で既存NGビットの保持、本文一致、参照連鎖、入れ子の判定と早期return時の状態解放を確認した。JDK 17のテスト・Lint・RVPビルドが成功した。
+- 4世代のChMate APKへ同じRVPを公式CLIで適用した。0.8.10.241のパッチ後DEXでは、NG判定メソッドの入口でレスを保持し、通常・早期returnの双方でbridgeへ戻すこと、constructorの最初の型一致代入からレス番号・名前・メール・日付・本文・ID・アンカ配列を対応付けることを確認した。
+- 公式Managerで統合した0.8.10.241 APKをpatch・署名し、AQUOS SH-R80P / Android 16へデータ保持更新した。最終保存APKと端末のインストール済みbase APKのSHA-256はともに`6F541ADAD84D11078480B4E64C40B4BBB98C4F6D164F72427AFD151363D8D5A9`、署名証明書SHA-256は`cddbc1c44abb5b0bc4efab2b9e82291758db40409082c7dda55cd1d771459ab0`。
+- 実機上の`http://127.0.0.1/test/read.cgi/test/1234567890/`へだけ適用する一時ルールを高度NG画面から追加・編集し、本文`middle_target_20261011`を含む2レス目と`>>2`で参照する3レス目を連鎖NGにした。通常あぼーんは両レスに「あぼーん」行を残した。透明あぼーんは両行と空間を消し、1レス目と4レス目の間に対象レスの空白は残らなかった。ルールを無効化して開き直すと2・3レスの本文が戻った。
+- 30レスの模擬スレッドで後半までスクロールして先頭へ戻しても、4〜30レスは表示され、2・3レスだけが透明NGの対象だった。数値・時間条件は実機の編集画面で選択項目が切り替わることまで確認し、実レス判定は単体テストで確認した。既存ChMateのNGルールは変更していない。テスト終了後、一時ルールと模擬スレッド履歴を削除し、ローカルサーバーとADB reverseを停止した。
+
+## 2026-10-11: 4chan・ふたば・jschanの画像掲示板
+
+- Issue本文にあるjschan系は4chan・ふたばとは異なるエンジンである。[jschan公式API文書](https://gitgud.io/api/v4/projects/fatchan%2Fjschan-docs/repository/files/source%2Findex.html.md.erb/raw?ref=master)の公開Repository APIから仕様を取得し、`/{board}/catalog.json`、`/{board}/thread/{id}.json`と、サイトの投稿フォーム`/forms/board/{board}/post`を確認した。公式READMEにある`https://zzzchan.xyz/tech/catalog.json`はHTTP 200でJSONを返した。`ImageBoardClientTest`でカタログ・返信・添付URLを確認した。AQUOS上では`/tech/`の一覧142件、画像、スレッド3レス、返信フォームの名前・件名・本文・添付・CAPTCHA欄を確認した。
 - 代表の板を[4chan公式API](https://github.com/4chan/4chan-API/blob/master/pages/Endpoints_and_domains.md)が提供する`/po/`、[ふたば公式メニュー](https://www.2chan.net/bbsmenu.html)にある料理板`https://dat.2chan.net/t/futaba.htm`とした。前者の`catalog.json`はHTTP 200で11ページ、後者のHTMLはHTTP 200で`charset=Shift_JIS`を返した。
 - `ImageBoardClientTest`で4chan/ふたばURLの検証、スレッドURL、4chan JSON、ふたばのOP・返信HTML、HTMLエスケープと画像URLを確認した。JDK 17のテスト・Lint・RVPビルドが成功し、公式CLIで0.8.10.165、.179、.202 dev、.241の4世代に適用した。patch後manifestに`ImageBoardActivity`を確認した。CLIの`-t`一時ディレクトリ内にある同名APKはパッチ処理で変化しているため、互換性テストにはリポジトリ直下の原本を使った。
 - ManagerでRVPをストレージから追加し、0.8.10.241の統合APKをpatch・署名してAQUOS SH-R80P / Android 16へデータ保持更新した。署名証明書SHA-256は既存インストールと一致した。ChMate本体の設定から画像掲示板画面を開けた。
 - 4chan `/po/`で一覧152件、サムネイル、公開スレッド4レスを確認した。`boards.4channel.org`は端末内WebViewで`ERR_SSL_PROTOCOL_ERROR`となった一方、同じ板の`boards.4chan.org`は正常に開き、返信フォームとCloudflare CAPTCHAが表示された。最終候補で`boards.4channel.org`形式を入力すると後者へ正規化して一覧152件を開き、板の新規スレッドフォームの件名・本文・CAPTCHA欄も表示した。
-- ふたば料理板で一覧10件、サムネイル、返信を含むスレッド8レスを確認した。WebViewでサイトの返信フォームが表示された。初回候補で横にはみ出したフォームとURL入力後に残ったキーボードは、最終候補で表示縮小・フォームへのスクロール・キーボードを閉じる修正を実機確認した。件名が`無題`の場合はレス本文を一覧の見出しに使い、ステータスバーの文字も背景と区別できるようにした。最終候補のManager保存APKのSHA-256は`8E6EA245EBDA769C0271CD52F5E7E2C34C60F11E247E002E45DCBB7E0987DF73`、署名証明書SHA-256は`cddbc1c44abb5b0bc4efab2b9e82291758db40409082c7dda55cd1d771459ab0`。
-- 両サイトへの実投稿は行っていないため、送信成功と投稿後の更新は未確認。サイト固有のCAPTCHA・hidden値・添付は元サイトのフォームを使う。画面確認用URLの公開内容はサイト側で変わる。
+- ふたば料理板で一覧10件、サムネイル、返信を含むスレッド8レスを確認した。WebViewでサイトの返信フォームが表示された。初回候補で横にはみ出したフォームとURL入力後に残ったキーボードは、表示縮小・フォームへのスクロール・キーボードを閉じる修正を実機確認した。件名が`無題`の場合はレス本文を一覧の見出しに使い、ステータスバーの文字も背景と区別できるようにした。最終APKの照合値は高度NG節に記録した。
+- 4chan・ふたば・jschan系の実投稿は行っていないため、送信成功と投稿後の更新は未確認。サイト固有のCAPTCHA・hidden値・添付は元サイトのフォームを使う。画面確認用URLの公開内容はサイト側で変わる。
 
 ## 2026-10-11: push前の依存監査
 

@@ -20,6 +20,7 @@ val chMatePatch = bytecodePatch(
         patchNiconicoVideoLinks()
         patchVideoMetadata()
         patchPostRetries()
+        patchAdvancedNg()
         renameSanitizedManifestClasses()
     }
 }

@@ -63,11 +63,18 @@ public final class SettingsActivity extends Activity {
         content.addView(videoMetadataSwitch, videoMetadataParams);
 
         Button imageBoards = button(Locale.getDefault().getLanguage().equals("ja")
-                ? "画像掲示板（4chan・ふたば）" : "Imageboards (4chan and Futaba)",
+                ? "画像掲示板（4chan・ふたば・jschan）" : "Imageboards (4chan, Futaba, jschan)",
                 view -> startActivity(new Intent(this, ImageBoardActivity.class)));
         LinearLayout.LayoutParams imageBoardsParams = matchWrap();
         imageBoardsParams.bottomMargin = dp(20);
         content.addView(imageBoards, imageBoardsParams);
+
+        Button advancedNg = button(Locale.getDefault().getLanguage().equals("ja")
+                ? "高度なNGルール" : "Advanced NG rules",
+                view -> startActivity(new Intent(this, AdvancedNgActivity.class)));
+        LinearLayout.LayoutParams advancedNgParams = matchWrap();
+        advancedNgParams.bottomMargin = dp(20);
+        content.addView(advancedNg, advancedNgParams);
 
         TextView label = new TextView(this);
         label.setText(strings.userAgent);
