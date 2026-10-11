@@ -21,7 +21,7 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 
 ## 2. 新しい ChMate APK を調査する
 
-APK はリポジトリ外で管理します。
+検証用 APK は Git 管理外で保管します。ローカルの `input/` やリポジトリ直下に置く場合も、コミットには含めません。
 
 1. package が `jp.co.airfront.android.a2chMate` であること、versionName / versionCode、SHA-256 を記録する。
 2. manifest に MAIN / LAUNCHER Activity が一つ以上あることを確認する。
@@ -51,6 +51,7 @@ APK はリポジトリ外で管理します。
 - 「保存して再起動」で ChMate の main process が入れ替わり、設定値が反映される
 - 広告 SDK package から外部通信が出ない
 - 既知広告ホストへの DNS / TCP / TLS 接続が出ない
+- ニコニコ動画の既知の公開動画リンクでサムネイルが表示され、動画を開く元の導線が維持される。動画情報APIが失敗する場合も既存の画像取得処理へ戻る
 
 通信確認は少なくとも、コールドスタート、スレッド一覧、スレッド表示を数分ずつ行います。端末の Private DNS や別の広告ブロッカーは無効にし、この patch 単独の結果を測ります。
 

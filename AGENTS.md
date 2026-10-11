@@ -28,3 +28,4 @@ Get-Content -Raw -LiteralPath .\COMMON-AGENTS.md
 - 依存更新時は `./gradlew --no-daemon :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid --write-locks` でlockfileを再生成し、同コマンド（`--write-locks` なし相当のCIと同じ範囲）が成功することを確認する。
 - JUnitのjupiterとlauncherは必ず同時更新する。片方だけでは `junit-bom` とDependency Lockingの厳密制約が不整合しCIのverifyが失敗する（2026-09-23のDependabot PR #2 / #4で確認）。
 - 複数のDependabot PRが同時に成功した場合、別PRが先にmainを更新すると自動マージが`Base branch was modified`で失敗することがある（2026-10-11のPR #13）。対象PRの現在のhead SHA・全チェック・mergeable状態を再確認して取り込み、手順と記録は`how-to-update.md`と`verification.md`を参照する。
+- 2026-10-11確認: 動画サムネイルは難読化されたクラス内で、URLパターンに応じてページを読み、画像URLを抽出する。少なくともChMate 0.8.10.165、.179、.202 dev、.241では`InputStreamReader(InputStream,String)`と`Pattern.compile(String,int)`を持つ静的な3引数・文字列戻り値メソッドが1件あり、`NiconicoThumbnailPatch.kt`はそこへ接続する。先に他のbytecode変換がメソッドを可変化している場合、ラベルの参照先は`firstMethod(method)`で得た可変実装の命令から取る。4世代の適用結果は`verification.md`を参照する。

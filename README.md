@@ -6,6 +6,7 @@ ChMate (`jp.co.airfront.android.a2chMate`) 向けの ReVanced Patch です。ChM
 
 - スレッド上部およびスレッド途中の広告 View を高さ `0dp`・`GONE` にする
 - 実行時に生成される広告 View も Activity のレイアウト更新時に折りたたむ
+- ニコニコ動画のサムネイルを公式の動画情報から取得し、取得できない場合はChMate本来の画像取得へ戻す
 - 既知の広告ホストを DNS、`URL`、HTTP クライアント、WebView の境界で遮断する
 - 既知広告 SDK のクラスから発生する DNS、`URL`、文字列 URL、WebView 通信を送信先にかかわらず遮断する
 - 広告 SDK の自動初期化 component と、公開されている初期化・広告 request entry point を無効化する
@@ -43,7 +44,7 @@ https://github.com/roflsunriz/chmate-revanced/releases/latest/download/patches.j
 
 ビルドには次のものが必要です。
 
-- JDK 17 以上
+- JDK 17（CI と同じメジャーバージョン）
 - Android SDK Platform 34
 - GitHub Packages を読める GitHub Personal Access Token (`read:packages`)
 
@@ -78,6 +79,7 @@ ChMate APK や patch 済み APK はこのリポジトリで配布しません。
 - ReVanced Manager（2026-08-09）: AQUOS SH-R80P / Android 16、公式ReVanced Manager 2.6.0へ`patches-1.0.2.rvp`をストレージから追加し、`0.8.10.241`の準備、resource / DEX patch、resource再コンパイル、zipalign、署名、patched APK保存がすべて成功
 - 書き込み画面（2026-08-10）: AQUOS SH-R80P / Android 16、ChMate `0.8.10.241`でv1.0.2の書き込み欄を開くと`<include>`の`layout`属性欠落による`InflateException`で終了することを再現。公式ReVanced Manager 2.6.0がv1.0.3候補で生成・署名したAPKをデータ保持更新し、既存スレッドの書き込み欄と新規スレッド作成画面が終了せず開くことを確認
 - APK 適用: `0.8.10.165`、`0.8.10.179`、`0.8.10.202 dev`、`0.8.10.241` の4世代で成功
+- ニコニコ動画サムネイル修正（2026-10-11）: `getthumbinfo/sm9` が返す画像URLと画像本体を確認。修正したRVPは上記4世代のAPKで公式CLI 6.0.0による適用、再構築、署名に成功。実機でのサムネイル表示は未確認
 - 構造検証: 全4世代で元の launcher、本体設定に追加した Preference、非公開の設定 Activity / Provider、拡張DEX、署名を確認
 - 広告 component: 検出した SDK component を各世代で30/30、35/35、6/6、29/29件無効化済み
 - XAPK: `0.8.10.179` の20 APK、`0.8.10.241` の4 APKを同一証明書で再署名し、split setを再構成済み
