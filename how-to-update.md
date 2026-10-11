@@ -97,3 +97,5 @@ Release workflow は ReVanced 公式と同じ `.rvp` 形式を直接配布し、
 設定を変えたときは `actionlint .github/workflows/dependabot-automation.yml` と実際の PR の Actions 結果を確認します。問題があれば呼び出し先の共通 workflow SHA を直前の検証済み値へ戻すコミットを push します。取り込まれた依存更新に問題があれば通常の revert コミットで復旧します。
 
 CI 完了より Dependabot の分類が遅れる場合は、`callback_workflow_file` が指す呼び出し側 workflow を `workflow_dispatch` し、同じ PR 番号・head SHA・全チェックを再確認する。呼び出し側のファイル名を変える際はこの入力も一緒に更新する。
+
+他の PR による main の更新と自動マージが競合して `Base branch was modified` になった場合は、対象 PR が open のままであること、現在の head SHA、全チェック成功、mergeable 状態を再確認する。条件がそろっていれば `gh pr merge <PR番号> --squash --match-head-commit <確認したhead SHA> --delete-branch` で取り込み、main の CI とリモートブランチ削除を確認する。古い head SHA や失敗したチェックを前提に再実行しない。

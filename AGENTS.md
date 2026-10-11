@@ -27,3 +27,4 @@ Get-Content -Raw -LiteralPath .\COMMON-AGENTS.md
 - GitHub Packages認証が必須のため `ORG_GRADLE_PROJECT_githubPackagesUsername` / `ORG_GRADLE_PROJECT_githubPackagesPassword` を環境変数で渡す（詳細はREADME参照）。
 - 依存更新時は `./gradlew --no-daemon :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid --write-locks` でlockfileを再生成し、同コマンド（`--write-locks` なし相当のCIと同じ範囲）が成功することを確認する。
 - JUnitのjupiterとlauncherは必ず同時更新する。片方だけでは `junit-bom` とDependency Lockingの厳密制約が不整合しCIのverifyが失敗する（2026-09-23のDependabot PR #2 / #4で確認）。
+- 複数のDependabot PRが同時に成功した場合、別PRが先にmainを更新すると自動マージが`Base branch was modified`で失敗することがある（2026-10-11のPR #13）。対象PRの現在のhead SHA・全チェック・mergeable状態を再確認して取り込み、手順と記録は`how-to-update.md`と`verification.md`を参照する。
