@@ -44,33 +44,11 @@ https://github.com/roflsunriz/chmate-revanced/releases/latest/download/patches.j
 
 ## 互換性の考え方
 
-対象パッケージ名だけを固定し、ChMate のバージョン番号や難読化名は固定していません。
-
-- レイアウトは広告 SDK の View クラス名と限定した広告用 ID / tag で判定する
-- 通信は `InetAddress`、`URL`、WebView、一般的な HTTP ヘッダー / URL builder 呼び出しを命令参照で判定する
-- 元のランチャー Activity 名はパッチ時に manifest から取得して設定画面へ記録する
-
-この方式はバージョン固定の fingerprint より変更に強い一方、ChMate の実装によっては更新が必要です。たとえば、ネイティブ通信、独自暗号化通信、未登録の広告 SDK、Compose など別の UI 実装へ移行した場合が該当します。「通信を完全に遮断できたこと」は対象 APK と実機でのパケット確認をもって判定してください。
+この内容は [findings.md](findings.md#readme-1) にまとめています。
 
 ## ビルド
 
-ビルドには次のものが必要です。
-
-- JDK 17（CI と同じメジャーバージョン）
-- Android SDK Platform 34
-- GitHub Packages を読める GitHub Personal Access Token (`read:packages`)
-
-ReVanced の Gradle plugin と Patcher は GitHub Packages から取得されます。トークンをリポジトリへ保存せず、PowerShell の現在のセッションへ設定してください。
-
-```powershell
-$env:ORG_GRADLE_PROJECT_githubPackagesUsername = '<GitHubユーザー名>'
-$env:ORG_GRADLE_PROJECT_githubPackagesPassword = '<read:packagesトークン>'
-.\gradlew.bat :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid
-```
-
-成果物は `patches/build/libs/patches-<version>.rvp` です。`<version>` は `gradle.properties` の `version` に従います。
-
-認証方法の詳細は [GitHub Packages の公式ドキュメント](https://docs.github.com/ja/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry)を参照してください。
+この内容は [findings.md](findings.md#readme-2) にまとめています。
 
 ## 適用と確認
 
@@ -116,4 +94,8 @@ GPL-3.0-only。詳細は [LICENSE](LICENSE) を参照してください。
 
 ## 依存更新の自動処理
 
-Dependabot は対象の依存関係を毎週確認します。patch／minor 更新は PR のチェック（CI）が成功した後に自動で squash merge されます。CI の失敗ジョブは 1 回だけ再実行します。再失敗した PR は残して手動で修正します。major 更新は手動で確認します。
+この内容は [findings.md](findings.md#readme-3) にまとめています。
+
+## 開発時の参照先
+
+プロジェクト固有の構成・環境・調査知見は [findings.md](findings.md)、作業規範は [AGENTS.md](AGENTS.md)、検証記録は [verification.md](verification.md) を参照してください。

@@ -15,3 +15,6 @@ local.properties
 *.xapk
 *.aab
 output/
+
+# エージェントの一時作業メモ
+subagents/
