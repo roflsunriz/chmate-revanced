@@ -97,3 +97,8 @@
 - ローカル脆弱性監査とレジストリへの最新版照会は、自動承認審査が依存情報のOSV・npm・PyPI等への送信を拒否したため未実行。依存名・版と送信先を承認できる環境で監査・更新確認を再開する。GitHub既存警告の0件だけでは、全依存の現時点の安全性や最新版であることを保証しない。
 - アプリコード・依存定義・lockfileを変更しない文書移動のため、製品のビルド・GUI操作・ブラウザ操作・実機書込みは実行していない。製品挙動を新たに検証したとは扱わない。
 - この作業コピーに既存ローカルPrettierがないため、Markdownの構造・リンク・差分を読み取り検証した。
+
+## 2026-10-20: Dependabot 月末一括処理
+
+- `.github/dependabot.yml` は毎月28日00:00、`.github/workflows/dependabot-automation.yml` は同日18:00（いずれも `Asia/Tokyo`）に設定した。呼び出し先は検証済み共通 workflow の固定 SHA とし、現在の head SHA、Dependabot の資格状態、全 PR チェック成功を merge 前に再確認する。
+- YAML 構文、変更差分、空白エラーをローカルで検査した。実際の月末 schedule と Dependabot PR の merge 経路は、次回の毎月28日実行で確認する。
