@@ -49,7 +49,7 @@ final class NativeEntryInstaller {
         });
     }
 
-    private static boolean containsText(View view, String text) {
+    static boolean containsText(View view, String text) {
         if (view instanceof android.widget.TextView
                 && text.contentEquals(((android.widget.TextView) view).getText())) return true;
         if (!(view instanceof ViewGroup)) return false;

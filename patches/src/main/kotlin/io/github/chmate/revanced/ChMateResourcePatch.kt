@@ -166,9 +166,6 @@ internal val chMateResourcePatch = resourcePatch {
         val boardSettingsPaths = xmlResourcePaths.filter { path ->
             document(path).use(Document::isBoardSettingsScreen)
         }
-        if (boardSettingsPaths.isEmpty()) {
-            throw PatchException("Could not find the ChMate board settings PreferenceScreen")
-        }
         boardSettingsPaths.forEach { path ->
             document(path).use(Document::addImageBoardSourcesPreference)
         }
@@ -273,14 +270,16 @@ internal fun Document.isBoardSettingsScreen(): Boolean {
     val elements = root.getElementsByTagName("*")
     var hasBoardCategory = false
     var hasBbsMenuUrl = false
+    var bbsMenuPreferenceCount = 0
     for (index in 0 until elements.length) {
         val element = elements.item(index) as? Element ?: continue
+        if (element.tagName.endsWith("BbsMenuUrlPreference")) bbsMenuPreferenceCount++
         when (element.getAttribute("android:key")) {
             "bbs" -> hasBoardCategory = true
             "bbsMenuUrl" -> hasBbsMenuUrl = true
         }
     }
-    return hasBoardCategory && hasBbsMenuUrl
+    return (hasBoardCategory && hasBbsMenuUrl) || bbsMenuPreferenceCount >= 2
 }
 
 internal fun Document.addImageBoardSourcesPreference() {

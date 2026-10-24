@@ -74,6 +74,15 @@ class ResourceNameSanitizerTest {
     }
 
     @Test
+    fun `attribute reference names preserve case`() {
+        val publicXml = "<resources><public type=\"attr\" name=\"colorControlNormal\" id=\"0x7f04006c\" /></resources>"
+        assertEquals(
+            mapOf("2130968684" to "@attr/colorControlNormal"),
+            ResourceNameSanitizer.resourceIdReferences(publicXml),
+        )
+    }
+
+    @Test
     fun `application layout attributes retain their compiled resource IDs and scalar types`() {
         val attrs = """
             <resources>
@@ -149,6 +158,36 @@ class ResourceNameSanitizerTest {
         assertEquals(
             "<adaptive-icon background=\"@color/res_7f060043\" foreground=\"@mipmap/res_7f0e0001\" />",
             ResourceNameSanitizer.sanitizeXml(decoded, resourceIdReferences = references),
+        )
+    }
+
+    @Test
+    fun `framework references and animation enums retain their compiled types`() {
+        val decoded = """
+            <set android:ordering="1" android:duration="@17694720">
+                <alpha android:interpolator="@17432582" android:valueType="2" android:zAdjustment="-1" android:repeatMode="2" android:fillType="1" android:strokeColor="#0" />
+            </set>
+        """.trimIndent()
+
+        assertEquals(
+            """
+                <set android:ordering="sequentially" android:duration="@android:integer/config_shortAnimTime">
+                    <alpha android:interpolator="@android:anim/decelerate_interpolator" android:valueType="pathType" android:zAdjustment="bottom" android:repeatMode="reverse" android:fillType="evenOdd" android:strokeColor="#00000000" />
+                </set>
+            """.trimIndent(),
+            ResourceNameSanitizer.sanitizeXml(decoded),
+        )
+    }
+
+    @Test
+    fun `numeric XML attribute names are restored from public IDs`() {
+        val references = mapOf("2130968684" to "@attr/colorControlNormal")
+        assertEquals(
+            "<vector app:colorControlNormal=\"@android:color/white\" android:tint=\"?attr/colorControlNormal\" android:stroke=\"?android:attr/colorControlNormal\" style=\"?android:attr/windowTitleStyle\" />",
+            ResourceNameSanitizer.sanitizeXml(
+                "<vector app:2130968684=\"@17170443\" android:tint=\"?attr/2130968684\" android:stroke=\"?android:attr/16843817\" style=\"?0x0101005b\" />",
+                resourceIdReferences = references,
+            ),
         )
     }
 

@@ -15,3 +15,4 @@
 - 画像掲示板をChMate標準画面で扱うには、元サイト別APIを直接ChMate内部modelへ増設するより、loopback限定の`BBSMENU`・`subject.txt`・`dat`変換とURL解析入口の書換えが版差に強い。任意HTTPS URLをjschan扱いせず、jschanは掲示板設定で登録済みのhost/boardだけを書き換える。
 - ホーム更新の実体は新版の`AutoCheckWork`、旧版の`ReloadBookmarkTask2`にある逐次処理である。元methodを再帰防止付きで最大4分割すると、難読化された取得・DB・error処理を複製せず並列化できる。
 - Android版Managerのapktoolは、246 devの難読化binary XMLで属性値または属性名をnullとして返す場合がある。値は型とraw dataから復元し、名前を復元できない属性だけを除外して不正な`android:`属性を作らない。
+- Manager 2.6.0の246 dev復号結果には、10進／16進のframework resource・attr ID、数値のanimation enum、1桁color、数値化されたapp attr名が残る。`public.xml`と既知framework IDへ戻し、未知値は有効な`@0x...`／`?0x...`形式を維持する。attr名は大文字小文字を変えずに復元する。

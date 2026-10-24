@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-24
+
+### Fixed
+
+- Android版ReVanced Managerで0.8.10.246 devの難読化binary XMLを処理できるよう、数値resource／attr参照、framework enum、短縮color、欠落属性を正規化した。
+- 掲示板設定XMLから属性名・クラス名を復元できないCompose版でも、実行時の「掲示板設定／BBSMENU」表示から対象画面を識別し、画像掲示板項目を追加できるようにした。
+
 ## [1.2.0] - 2026-10-24
 
 ### Added

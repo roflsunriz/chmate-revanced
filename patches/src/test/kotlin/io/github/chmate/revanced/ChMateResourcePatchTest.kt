@@ -81,6 +81,22 @@ class ChMateResourcePatchTest {
     }
 
     @Test
+    fun `finds Android decoded board settings even when key attributes were unavailable`() {
+        val document = document(
+            """
+            <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+              <jp.syoboi.a2chMate.ui.setting.preference.bbsmenuurl.BbsMenuUrlPreference />
+              <jp.syoboi.a2chMate.ui.setting.preference.bbsmenuurl.BbsMenuUrlPreference />
+            </PreferenceScreen>
+            """.trimIndent(),
+        )
+
+        assertTrue(document.isBoardSettingsScreen())
+        document.addImageBoardSourcesPreference()
+        assertEquals(1, document.getElementsByTagName("Preference").length)
+    }
+
+    @Test
     fun `deactivates analytics and telemetry collection`() {
         val application = applicationElement(
             """

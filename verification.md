@@ -2,6 +2,12 @@
 
 ## 2026-10-24: v1.2.0 画像掲示板・高度NG統合と並列更新
 
+- v1.2.1候補をAQUOS SH-R80P / Android 16の公式ReVanced Manager 2.6.0へ読み込み、0.8.10.246 devで`ChMate ReVanced`適用、全10 DEXのコンパイル、resourceコンパイル、zipalign、Manager署名まで完了した。候補とclean再ビルドRVPは42 entry中`META-INF/MANIFEST.MF`だけが異なり、patch classと拡張DEXは同一だった。インストールは共通手順に従い利用者の明示承認待ちとした。
+- v1.2.1のclean build後、公式CLI 6.0.0で165、統合済み179 XAPK、202 dev、統合済み241 XAPK、244 dev、245 dev、246 devへ同一RVPを適用し、全7世代で`"ChMate ReVanced" succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。
+- v1.2.1のclean状態で`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。ローカルRVPは42 entryで、SHA-256は`41692feb214ba022e40ab24605de17406189b46061723d820f561100d8f33479`だった。
+- OSV-Scanner 2.7.0でpatches lockfileの68 packageとextension lockfileの176 packageを検査し、既知脆弱性0件を確認した。settings lockfileは対象packageがなくextractor対象外だった。
+- 公開後の固定URL v1.2.0をManagerへ更新して246 devを再適用すると、binary XMLのnull値・不正属性名は解消したが、`android:key`を失った掲示板設定を検出できず停止した。BBSMENU Preferenceクラスによるv1.2.1候補でもManager復号結果にはクラス名が残らなかったため、旧版のXML統合を保ちつつ、Compose版は実行時の「掲示板設定／BBSMENU」表示から同画面を識別するfallbackへ変更した。
+
 - `ParallelRefreshBridgeTest`で同一板4件を4ワーカーへ分割し、実行区間が重なることとエラー件数の集約を確認した。別板は板単位で分割する。新版`AutoCheckWork`と旧版`ReloadBookmarkTask2`の逐次method入口へ同じbridgeを注入し、worker側だけ元methodを実行するDEXを確認した。
 - `ImageBoardIntegrationTest`で4chanの板・スレッドURLをloopbackの板URL・`test/read.cgi`へ変換し、ChMateが扱えない短いjschan IDを安定した9桁IDへ変換すること、一般HTTPS URLをjschanとして誤変換しないことを確認した。246 devの復号後掲示板設定XMLに`ImageBoardSourcesActivity`へのPreference、manifestに非公開ActivityとProvider、拡張DEXに`BBSMENU`・`subject.txt`・`dat`変換サーバーを確認した。
 - JDK 17のclean後に`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。ローカルRVPは42エントリ、SHA-256は`2d6e3f96f083fa547db7eac3f99e1454572292e2a575800d8d133355f84bce5d`で、Android DEXの`extensions/chmate.rve`とdeep integration／parallel refresh patchを含み、APK/XAPKを含まない。
