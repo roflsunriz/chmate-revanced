@@ -1,6 +1,7 @@
 package io.github.chmate.revanced
 
 import app.revanced.patcher.extensions.instructionsOrNull
+import app.revanced.patcher.extensions.addInstructions
 import app.revanced.patcher.extensions.replaceInstruction
 import app.revanced.patcher.firstMethod
 import app.revanced.patcher.patch.BytecodePatchContext
@@ -31,33 +32,58 @@ internal fun BytecodePatchContext.patchIntegrityChecks() {
             } else {
                 instructions.indices.filter { index -> instructions.isWindowFeatureTrap(index) }
             }
-            if (failureBranchIndices.isEmpty() && windowFeatureTrapIndices.isEmpty()) {
+            val divideTrapIndices = instructions.indices.filter { index ->
+                instructions.isObfuscatedDivideTrap(index)
+            }
+            if (failureBranchIndices.isEmpty() && windowFeatureTrapIndices.isEmpty() && divideTrapIndices.isEmpty()) {
                 null
             } else {
-                method to IntegrityPatchIndices(failureBranchIndices, windowFeatureTrapIndices)
+                method to IntegrityPatchIndices(failureBranchIndices, windowFeatureTrapIndices, divideTrapIndices)
             }
         }
     }.forEach { (method, indices) ->
         val mutableMethod = firstMethod(method)
         val originalInstructions = method.instructionsOrNull!!.toList()
         indices.failureBranches.forEach { index -> mutableMethod.replaceInstruction(index, "nop") }
-        indices.windowFeatureTraps.forEach { index ->
+        (indices.windowFeatureTraps + indices.divideTraps).distinct().forEach { index ->
             val divide = originalInstructions[index] as TwoRegisterInstruction
             mutableMethod.replaceInstruction(index, "const/16 v${divide.registerA}, 0x1")
         }
+    }
+    patchBoardListLifecycleIntegrity()
+}
+
+private fun BytecodePatchContext.patchBoardListLifecycleIntegrity() {
+    val classDef = classDefs.firstOrNull {
+        it.type == "Ljp/syoboi/a2chMate/activity/BoardList2Activity;"
+    } ?: return
+    val superType = classDef.superclass
+    classDef.methods.filter { method ->
+        method.name in setOf("onStart", "onResume") &&
+            method.parameterTypes.isEmpty() && method.returnType == "V"
+    }.forEach { method ->
+        firstMethod(method).addInstructions(
+            0,
+            """
+                invoke-super {p0}, $superType->${method.name}()V
+                return-void
+            """.trimIndent(),
+        )
     }
 }
 
 private data class IntegrityPatchIndices(
     val failureBranches: List<Int>,
     val windowFeatureTraps: List<Int>,
+    val divideTraps: List<Int>,
 )
 
 private fun List<Instruction>.isIntegrityFailureBranch(index: Int): Boolean {
     val comparison = getOrNull(index) as? TwoRegisterInstruction ?: return false
     if (comparison.opcode != Opcode.IF_NE) return false
 
-    val reads = (maxOf(2, index - 12) until index).mapNotNull(::integerArrayReadEndingAt)
+    // Newer obfuscators insert substantially more register setup between the paired reads.
+    val reads = (maxOf(2, index - 64) until index).mapNotNull(::integerArrayReadEndingAt)
     val left = reads.lastOrNull { it.resultRegister == comparison.registerA } ?: return false
     val right = reads.lastOrNull { it.resultRegister == comparison.registerB } ?: return false
     if (left == right) return false
@@ -80,6 +106,26 @@ private fun List<Instruction>.isWindowFeatureTrap(index: Int): Boolean {
     return matchesWindowFeatureTrap(divide.opcode, followingReference?.toString())
 }
 
+private fun List<Instruction>.isObfuscatedDivideTrap(index: Int): Boolean {
+    val divide = getOrNull(index) as? TwoRegisterInstruction ?: return false
+    val numerator = getOrNull(index - 1) as? OneRegisterInstruction ?: return false
+    return matchesObfuscatedDivideTrap(
+        divide.opcode,
+        divide.registerA,
+        numerator.opcode,
+        numerator.registerA,
+    )
+}
+
+internal fun matchesObfuscatedDivideTrap(
+    divideOpcode: Opcode,
+    divideResultRegister: Int,
+    numeratorOpcode: Opcode,
+    numeratorRegister: Int,
+): Boolean = divideOpcode == Opcode.DIV_INT_2ADDR &&
+    numeratorOpcode in setOf(Opcode.CONST_4, Opcode.CONST_16, Opcode.CONST, Opcode.CONST_HIGH16) &&
+    numeratorRegister == divideResultRegister
+
 internal fun matchesWindowFeatureTrap(divideOpcode: Opcode, followingMethod: String?): Boolean =
     divideOpcode == Opcode.DIV_INT_2ADDR && followingMethod == REQUEST_WINDOW_FEATURE
 
@@ -87,17 +133,23 @@ private fun List<Instruction>.integerArrayReadEndingAt(index: Int): IntegrityArr
     val read = getOrNull(index) as? ThreeRegisterInstruction ?: return null
     if (read.opcode != Opcode.AGET) return null
 
-    val cast = getOrNull(index - 1) as? OneRegisterInstruction ?: return null
+    val castIndex = (maxOf(1, index - 3) until index).lastOrNull { candidate ->
+        val instruction = getOrNull(candidate)
+        instruction?.opcode == Opcode.CHECK_CAST &&
+            (instruction as? OneRegisterInstruction)?.registerA == read.registerB &&
+            isIntegrityArrayIndexSetup(subList(candidate + 1, index).map(Instruction::getOpcode))
+    } ?: return null
+    val cast = getOrNull(castIndex) as? OneRegisterInstruction ?: return null
     val castType = ((cast as? ReferenceInstruction)?.reference as? TypeReference)?.type
     if (cast.opcode != Opcode.CHECK_CAST || cast.registerA != read.registerB || castType != "[I") {
         return null
     }
 
-    val outerRead = getOrNull(index - 2) as? ThreeRegisterInstruction ?: return null
+    val outerRead = getOrNull(castIndex - 1) as? ThreeRegisterInstruction ?: return null
     if (outerRead.opcode != Opcode.AGET_OBJECT || outerRead.registerA != read.registerB) return null
 
     return IntegrityArrayRead(
-        startIndex = index - 2,
+        startIndex = castIndex - 1,
         endIndex = index,
         resultRegister = read.registerA,
         sourceRegister = outerRead.registerB,
@@ -117,6 +169,9 @@ private val ALLOWED_INTERVENING_OPCODES = setOf(
     Opcode.CONST,
     Opcode.CONST_HIGH16,
 )
+
+internal fun isIntegrityArrayIndexSetup(opcodes: List<Opcode>): Boolean =
+    opcodes.all(ALLOWED_INTERVENING_OPCODES::contains)
 
 internal fun matchesIntegrityComparison(
     first: IntegrityArrayRead,

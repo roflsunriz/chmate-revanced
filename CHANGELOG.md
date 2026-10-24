@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-10-24
+
+### Fixed
+
+- Android版ReVanced Managerで0.8.10.246 devのroot配置binary XMLを復号した際、文字列poolから欠落した属性名をresource IDから復元し、`IntListPreference`などの必須属性が消えて起動不能になる問題を修正した。
+- 0.8.10.246 devで追加された起動・設定・板一覧のintegrity trapを構造検出して無効化し、Manager署名版でも各画面を開けるようにした。
+- Compose版のChMate設定下部へ画像掲示板と高度NGの直接入口を常設し、掲示板設定・NG設定から中央のReVanced設定を経由せず開けるようにした。
+
 ## [1.2.1] - 2026-10-24
 
 ### Fixed

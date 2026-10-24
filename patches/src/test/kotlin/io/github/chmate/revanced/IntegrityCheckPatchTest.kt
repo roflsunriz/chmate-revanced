@@ -15,6 +15,12 @@ class IntegrityCheckPatchTest {
     }
 
     @Test
+    fun `permits a constant between array cast and read`() {
+        assertTrue(isIntegrityArrayIndexSetup(listOf(Opcode.CONST_4)))
+        assertFalse(isIntegrityArrayIndexSetup(listOf(Opcode.INVOKE_STATIC)))
+    }
+
+    @Test
     fun `does not classify reads from unrelated result arrays`() {
         assertFalse(
             matchesIntegrityComparison(
@@ -38,6 +44,18 @@ class IntegrityCheckPatchTest {
             matchesWindowFeatureTrap(
                 Opcode.DIV_INT_2ADDR,
                 "Landroid/app/Activity;->requestWindowFeature(I)Z",
+            ),
+        )
+    }
+
+    @Test
+    fun `detects an obfuscated integrity divide trap`() {
+        assertTrue(
+            matchesObfuscatedDivideTrap(
+                Opcode.DIV_INT_2ADDR,
+                divideResultRegister = 2,
+                Opcode.CONST,
+                numeratorRegister = 2,
             ),
         )
     }

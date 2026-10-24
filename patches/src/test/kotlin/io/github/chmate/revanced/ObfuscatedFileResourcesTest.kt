@@ -31,6 +31,14 @@ class ObfuscatedFileResourcesTest {
     }
 
     @Test
+    fun `binary XML attributes recover names from resource IDs`() {
+        assertEquals("key", binaryXmlFallbackAttributeName(0x010101e8, null))
+        assertEquals("useSimpleSummaryProvider", binaryXmlFallbackAttributeName(0x7f04021d, "useSimpleSummaryProvider"))
+        assertEquals("APKTOOL_MISSING_7f04021d", binaryXmlFallbackAttributeName(0x7f04021d, null))
+        assertEquals("", binaryXmlFallbackAttributeName(0, null))
+    }
+
+    @Test
     fun `binary XML attributes without names are removed`() {
         assertEquals(
             "<view android:id=\"@id/title\" app:known=\"1\" />",

@@ -7,12 +7,13 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 final class NativeEntryInstaller {
-    private static final Set<Activity> INSTALLED = Collections.newSetFromMap(new WeakHashMap<>());
+    private static final Map<Activity, Map<String, Button>> BUTTONS = new WeakHashMap<>();
+    private static final Map<Activity, LinearLayout> ACTIONS = new WeakHashMap<>();
 
     private NativeEntryInstaller() {
     }
@@ -22,41 +23,47 @@ final class NativeEntryInstaller {
         ViewGroup content = activity.findViewById(android.R.id.content);
         if (content == null) return;
         content.post(() -> {
-            synchronized (INSTALLED) {
-                if (INSTALLED.contains(activity) || activity.isFinishing()) return;
-                INSTALLED.add(activity);
+            synchronized (BUTTONS) {
+                if (activity.isFinishing() || activity.isDestroyed()) return;
+                Map<String, Button> activityButtons = BUTTONS.get(activity);
+                if (activityButtons == null) {
+                    activityButtons = new HashMap<>();
+                    BUTTONS.put(activity, activityButtons);
+                }
+                Button existing = activityButtons.get(label);
+                if (existing != null) {
+                    existing.setOnClickListener(listener);
+                    return;
+                }
+                LinearLayout actions = ACTIONS.get(activity);
+                if (actions == null) {
+                    FrameLayout original = new FrameLayout(activity);
+                    while (content.getChildCount() > 0) {
+                        View child = content.getChildAt(0);
+                        content.removeViewAt(0);
+                        original.addView(child);
+                    }
+                    LinearLayout column = new LinearLayout(activity);
+                    column.setOrientation(LinearLayout.VERTICAL);
+                    column.addView(original, new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+                    actions = new LinearLayout(activity);
+                    actions.setOrientation(LinearLayout.VERTICAL);
+                    column.addView(actions, new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    content.addView(column, new ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                    ACTIONS.put(activity, actions);
+                }
+                Button entry = new Button(activity);
+                entry.setText(label);
+                entry.setAllCaps(false);
+                entry.setOnClickListener(listener);
+                actions.addView(entry, new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                activityButtons.put(label, entry);
             }
-            if (containsText(content, label)) return;
-
-            FrameLayout original = new FrameLayout(activity);
-            while (content.getChildCount() > 0) {
-                View child = content.getChildAt(0);
-                content.removeViewAt(0);
-                original.addView(child);
-            }
-            LinearLayout column = new LinearLayout(activity);
-            column.setOrientation(LinearLayout.VERTICAL);
-            column.addView(original, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
-            Button entry = new Button(activity);
-            entry.setText(label);
-            entry.setAllCaps(false);
-            entry.setOnClickListener(listener);
-            column.addView(entry, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            content.addView(column, new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         });
     }
 
-    static boolean containsText(View view, String text) {
-        if (view instanceof android.widget.TextView
-                && text.contentEquals(((android.widget.TextView) view).getText())) return true;
-        if (!(view instanceof ViewGroup)) return false;
-        ViewGroup group = (ViewGroup) view;
-        for (int i = 0; i < group.getChildCount(); i++) {
-            if (containsText(group.getChildAt(i), text)) return true;
-        }
-        return false;
-    }
 }

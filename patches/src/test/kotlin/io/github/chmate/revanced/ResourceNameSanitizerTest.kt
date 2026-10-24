@@ -180,6 +180,22 @@ class ResourceNameSanitizerTest {
     }
 
     @Test
+    fun `framework theme values and drawable enums are restored`() {
+        val decoded = """
+            <selector android:color="@17170445" app:tint="?16843818" />
+            <shape android:shape="0" android:tileModeX="1" android:gravity="0x11" android:clipOrientation="0x1" />
+        """.trimIndent()
+
+        val sanitized = ResourceNameSanitizer.sanitizeXml(decoded)
+        check("@android:color/transparent" in sanitized)
+        check("?android:attr/colorControlActivated" in sanitized)
+        check("android:shape=\"rectangle\"" in sanitized)
+        check("android:tileModeX=\"repeat\"" in sanitized)
+        check("android:gravity=\"center_horizontal|center_vertical\"" in sanitized)
+        check("android:clipOrientation=\"horizontal\"" in sanitized)
+    }
+
+    @Test
     fun `numeric XML attribute names are restored from public IDs`() {
         val references = mapOf("2130968684" to "@attr/colorControlNormal")
         assertEquals(
