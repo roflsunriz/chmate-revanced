@@ -8,6 +8,7 @@
 - OSV-Scanner 2.7.0で`patches/gradle.lockfile`の68パッケージと`extensions/chmate/gradle.lockfile`の176パッケージを検査し、既知脆弱性の検出は0件だった。`settings-gradle.lockfile`は依存エントリを持たず抽出対象にならない。GitHub Dependabotの未解決アラートとopen PRも0件だった。
 - 179の20 moduleと241の4 moduleはAPKEditor 1.4.9で統合した。同じ`patches-1.2.0.rvp`を165、179、202 dev、241、244 dev、245 dev、246 devへ公式CLI 6.0.0で適用し、全7世代で`ChMate ReVanced succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。
 - AQUOS SH-R80P / Android 16の公式Manager 2.6.0では、初回候補で246 devのbinary XML属性値がnullとなる失敗、次候補で属性名が空の`android:`となる失敗を再現した。型付きraw値の復元と名前なし属性だけの除外を追加し、JUnitと7世代CLIを再実行した。固定URLソースを残したまま複数の同名ローカル候補を追加するとAPKのパッチ選択画面が新しい候補を列挙しないため、公開後に固定URLをv1.2.0へ更新してManagerの最終適用を行う。
+- `main`のCI [run 40087070199](https://github.com/roflsunriz/chmate-revanced/actions/runs/40087070199)と公開前Release workflow [run 40087075212](https://github.com/roflsunriz/chmate-revanced/actions/runs/40087075212)は成功した。Actions artifactのRVPはSHA-256 `5ea631c9469eebeb4bb3c2d458425c72255900c2e790c3b87d2f8d64e73fa02b`。ローカル版とZIP entry・patch classは一致した。拡張DEXからJADXで双方765ソースを抽出したところ、Windows/LinuxのD8によるlambda・nest accessor番号は異なるが、`app.revanced.extension.chmate`のmethod本体・文字列・型に実装差がないことを確認した。
 
 ## 2026-10-19: CI高速化
 

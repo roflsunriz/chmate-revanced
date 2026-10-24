@@ -9,7 +9,7 @@
 - 投稿retryは通信callback解放後の最終 `IOException` 派生経路へ接続する。実掲示板へ送らず、ローカル模擬板と `adb reverse` で返信・新規threadを確認する。
 - 高度NGは判定method入口でレスと判定器をbridge stackへ保存し、早期returnを含む全returnでpopする。終端のparameter registerは別用途へ再利用され得る。透明NGは対象レスのRecyclerView行だけを0/GONEにし、再利用viewでは必ず復元する。
 - 4chan、ふたば、jschanはAPI・投稿form・encodingが別。独立engineとして扱い、4channel URLは実機SSL不具合時に4chanへ正規化しても読取API `a.4cdn.org` との役割を混同しない。
-- ローカル/Actionsの同版RVPはmanifest Timestamp差で全体SHAが一致しない。公開前はZIP entryとmanifest以外を比較し、公開後はrelease RVPと同梱checksumを照合する。
+- ローカル/Actionsの同版RVPはmanifest Timestampに加え、Windows/Linux間のD8が生成するlambda・nest accessor番号の差で拡張DEXのSHAも一致しない場合がある。公開前はZIP entry、patch class、拡張DEXのクラス・method・文字列と逆コンパイル後の処理を比較し、公開後はrelease RVPと同梱checksumを照合する。
 - 広告通信の完全遮断はbytecode適用だけで断定せず、対象APK・実機のpacket観測で判定する。native/独自暗号/新SDK/Compose移行は追加調査対象。
 - 0.8.10.246 devの設定は空`PreferenceScreen`ではなくCompose化されている。設定入口は旧版のXML Preferenceと、新版の`SettingActivity.onCreate`後に既存contentを包む経路の両方へ接続する。
 - 画像掲示板をChMate標準画面で扱うには、元サイト別APIを直接ChMate内部modelへ増設するより、loopback限定の`BBSMENU`・`subject.txt`・`dat`変換とURL解析入口の書換えが版差に強い。任意HTTPS URLをjschan扱いせず、jschanは掲示板設定で登録済みのhost/boardだけを書き換える。
