@@ -94,7 +94,10 @@ private class BinaryXmlDecoder(apkFile: File) {
 
     init {
         val extFile = ExtFile(apkFile)
-        val resourcesDecoder = ResourcesDecoder(Config.getDefaultConfig(), ApkInfo(extFile))
+        val config = Config.getDefaultConfig().apply {
+            frameworkDirectory = prepareFrameworkDirectory(apkFile)
+        }
+        val resourcesDecoder = ResourcesDecoder(config, ApkInfo(extFile))
         resourcesDecoder.loadMainPkg()
         val parser = object : AXmlResourceParser(resourcesDecoder.resTable) {
             private val stringBlockField = AXmlResourceParser::class.java
@@ -136,6 +139,19 @@ private class BinaryXmlDecoder(apkFile: File) {
         decoder.decode(ByteArrayInputStream(bytes), output)
         return removeUnnamedXmlAttributes(output.toString(Charsets.UTF_8))
     }
+}
+
+internal fun prepareFrameworkDirectory(
+    apkFile: File,
+    temporaryDirectory: String? = System.getProperty("java.io.tmpdir"),
+): String {
+    val candidates = buildList {
+        if (!temporaryDirectory.isNullOrBlank()) add(File(temporaryDirectory, "framework"))
+        apkFile.parentFile?.let { add(it.resolve(".apktool-framework")) }
+    }
+    return candidates.firstOrNull { directory ->
+        (directory.isDirectory || directory.mkdirs()) && directory.canWrite()
+    }?.absolutePath ?: throw IllegalStateException("Could not create a writable apktool framework directory")
 }
 
 internal fun removeUnnamedXmlAttributes(xml: String): String = Regex(

@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-10-24
+
+### Fixed
+
+- Android 17のReVanced Manager別プロセスでapktoolのframework保存先が`/.local/share`となり、書き込み失敗ログがBinder上限を超えてパッチ処理が終了する問題を修正した。
+
 ## [1.2.2] - 2026-10-24
 
 ### Fixed

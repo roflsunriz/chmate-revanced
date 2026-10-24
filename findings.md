@@ -18,3 +18,4 @@
 - Manager 2.6.0の246 dev復号結果には、10進／16進のframework resource・attr ID、数値のanimation enum、1桁color、数値化されたapp attr名が残る。`public.xml`と既知framework IDへ戻し、未知値は有効な`@0x...`／`?0x...`形式を維持する。attr名は大文字小文字を変えずに復元する。
 - 246 devのroot配置binary XMLは属性名のstring pool indexが`-1`でもresource IDを保持する。apktool 2.10系の`AXmlResourceParser.getAttributeName`はこの場合にresource ID解決前に空文字を返すため、`getAttributeNameResource`とAndroid実行時の`android.R.attr`で補完しないとPreferenceの`key`・`entries`・`defaultValue`が全消失し、アプリ起動時に`IntListPreference`がNPEになる。文字列値もprivate string blockから復元し、framework enum・flag・resource参照はAAPT2が受理するsymbolへ戻す。
 - 246 devの`RoidonApp.onCreate`にも、同じ結果arrayから2値を読み出して不一致時にnullをthrowするintegrity分岐がある。新版obfuscatorではpaired read間のregister準備が増えるため、短い後方windowだけでは検出できず起動直後にNPEとなる。
+- Android 17ではManager 2.6.0の別patcher processの`user.home`が`/`となり、apktool 2.10系が`/.local/share/apktool/framework`を属性解決のたびに作成しようとして失敗する。大量logがBinder bufferを超えると`RemoteFailureException`になるため、RVP内で`java.io.tmpdir/framework`へ明示的に切り替える。

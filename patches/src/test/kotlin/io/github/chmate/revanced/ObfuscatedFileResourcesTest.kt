@@ -2,8 +2,13 @@ package io.github.chmate.revanced
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
 
 class ObfuscatedFileResourcesTest {
+    @TempDir
+    lateinit var temporaryDirectory: Path
+
     @Test
     fun `file aliases are found with qualifiers and removed`() {
         val xml = """
@@ -46,5 +51,17 @@ class ObfuscatedFileResourcesTest {
                 "<view android:id=\"@id/title\" android:=\"0x1\" =\"bad\" app:known=\"1\" />",
             ),
         )
+    }
+
+    @Test
+    fun `apktool framework directory is writable and scoped to the process cache`() {
+        val apk = temporaryDirectory.resolve("input.apk").toFile()
+        val cache = temporaryDirectory.resolve("cache").toFile()
+
+        val directory = prepareFrameworkDirectory(apk, cache.absolutePath)
+
+        assertEquals(cache.resolve("framework").absolutePath, directory)
+        check(cache.resolve("framework").isDirectory)
+        check(cache.resolve("framework").canWrite())
     }
 }

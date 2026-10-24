@@ -2,6 +2,10 @@
 
 ## 2026-10-24: v1.2.0 画像掲示板・高度NG統合と並列更新
 
+- Pixel 10a / Android 17 / ReVanced Manager 2.6.0でv1.2.2を246 devへ適用すると、resource decode中に`/.local/share/apktool/framework`を作成できないlogが大量発生し、Binderの`DeadObjectException`を経て`ProcessRuntime.RemoteFailureException`となることを再現した。v1.2.3ではapktool framework保存先をprocess cacheへ切り替える。
+- v1.2.3候補では同じPixel 10aで準備2/2、patch適用2/2、保存2/2まで完走し、全9 DEX、resource、zipalign、Manager署名済みAPKの生成を確認した。`/.local/share`のframework作成失敗、Binder `DeadObjectException`、`RemoteFailureException`はいずれも再発しなかった。端末へのインストールは利用者の明示承認待ちとした。
+- v1.2.3のclean状態で`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。同じ最終RVPを公式CLI 6.0.0で165、統合済み179 XAPK、202 dev、統合済み241 XAPK、244 dev、245 dev、246 devへ適用し、全7世代で`"ChMate ReVanced" succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。ローカルRVPのSHA-256は`80da098cdf24b3a2d8196bfa0557b06e5c07fdb3b7d01354db7c4f79d96e32c3`だった。Pixel実機候補との差分は42 entry中`META-INF/MANIFEST.MF`だけだった。
+- OSV-Scanner 2.7.0でpatches lockfileの68 packageとextension lockfileの176 packageを検査し、既知脆弱性0件を確認した。
 - v1.2.1をManagerで246 devへデータ保持更新すると、versionCode 516、versionName `0.8.10.246 dev`、ReVanced証明書SHA-256 `cddbc1c44abb5b0bc4efab2b9e82291758db40409082c7dda55cd1d771459ab0`でインストールは成功した。一方、初回起動で`IntListPreference.<init>`がNPEとなった。patch済みAPKを復号するとroot配置binary XMLのPreference属性が消失しており、文字列pool indexが欠落した属性名をresource IDから復元するv1.2.2修正へ移行した。
 - v1.2.2候補を公式Manager 2.6.0で246 devへデータ保持更新し、ホーム、Compose設定、掲示板設定、NG設定、板一覧を開けることを確認した。掲示板設定下部の「画像掲示板の板」から3種のsourceを保存するとBBSMENU URL 2へ`http://127.0.0.1:28282/bbsmenu`が入り、板一覧更新は1945板を処理した。「URLを開く」に`https://boards.4chan.org/g/`を入力するとChMate標準スレ一覧画面で同URLを開いた。NG設定下部の「高度なNGルール」からルール画面へ直接遷移した。更新ボタンとpull-to-refresh後もChMate processが継続した。
 - v1.2.2のclean状態で`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。同じ最終RVPを公式CLI 6.0.0で165、統合済み179 XAPK、202 dev、統合済み241 XAPK、244 dev、245 dev、246 devへ適用し、全7世代で`"ChMate ReVanced" succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。ローカルRVPのSHA-256は`b76a0a889ac910371ea2fb2ff9e80cd4be65f9c8f22de42f4010fdf68afb3e0d`だった。
