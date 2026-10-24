@@ -5,6 +5,7 @@
 - v1.2.1候補をAQUOS SH-R80P / Android 16の公式ReVanced Manager 2.6.0へ読み込み、0.8.10.246 devで`ChMate ReVanced`適用、全10 DEXのコンパイル、resourceコンパイル、zipalign、Manager署名まで完了した。候補とclean再ビルドRVPは42 entry中`META-INF/MANIFEST.MF`だけが異なり、patch classと拡張DEXは同一だった。インストールは共通手順に従い利用者の明示承認待ちとした。
 - v1.2.1のclean build後、公式CLI 6.0.0で165、統合済み179 XAPK、202 dev、統合済み241 XAPK、244 dev、245 dev、246 devへ同一RVPを適用し、全7世代で`"ChMate ReVanced" succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。
 - v1.2.1のclean状態で`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。ローカルRVPは42 entryで、SHA-256は`41692feb214ba022e40ab24605de17406189b46061723d820f561100d8f33479`だった。
+- mainへのpush後、GitHub Actions CI run `40090485509`でも同じJUnit・Android Lint・RVP buildが成功した。
 - OSV-Scanner 2.7.0でpatches lockfileの68 packageとextension lockfileの176 packageを検査し、既知脆弱性0件を確認した。settings lockfileは対象packageがなくextractor対象外だった。
 - 公開後の固定URL v1.2.0をManagerへ更新して246 devを再適用すると、binary XMLのnull値・不正属性名は解消したが、`android:key`を失った掲示板設定を検出できず停止した。BBSMENU Preferenceクラスによるv1.2.1候補でもManager復号結果にはクラス名が残らなかったため、旧版のXML統合を保ちつつ、Compose版は実行時の「掲示板設定／BBSMENU」表示から同画面を識別するfallbackへ変更した。
 
