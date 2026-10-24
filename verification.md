@@ -2,6 +2,16 @@
 
 ## 2026-10-24: v1.2.0 画像掲示板・高度NG統合と並列更新
 
+- Pixel 10aへv1.2.3をインストール後、スレッドを開くと`ResListActivity.onStart(:727)`のNPEで断続的に終了することをcrash bufferで4件確認した。246 devのdecompile結果では`onStart`と`onResume`の成功経路がsuper呼出しだけで、内部counterの分岐がnull throw等へ入るため、v1.2.4で両ライフサイクルを直接superへ委譲する。
+- v1.2.4候補をPixel 10aへデータ保持更新後、したらばの同一スレッド「AA保管庫」を20回連続で開閉した。20/20回で`ResListActivity`がtop resumed activityとなり、ChMate processは同じPIDで継続し、crash bufferは空だった。
+- 続くホーム全メニュー検査で「スレ検索」を開いた際に`WebViewActivity.onStart(:653)`のNPEを検出したため、同Activityもv1.2.4のライフサイクル修正対象へ追加した。
+- スレッドtoolbarの「書き込む」で`ResEditActivity.onStart(:598)`のArithmeticExceptionを検出したため、同Activityもv1.2.4のライフサイクル修正対象へ追加した。
+- 246 devのdecompile結果をActivity全体へ横断し、Home・Search・ThreadListにもライフサイクルtrapを確認した。対象7 Activityのうちsuper同名呼出しとthrow／divide opcodeが共存するmethodだけを修正する構造判定へ一般化した。
+- 再検査で返信ダイアログは`onStart`を通過したが、`ResEditActivity.onResume(:521)`の`NegativeArraySizeException`を検出した。負数長の`NEW_ARRAY`もsuper同名呼出しと共存する場合に限ってライフサイクルtrapとして修正する。
+- 最終候補v1.2.4eで、ホーム5 tab・12メニュー、設定14項目、画像掲示板／高度NG／ChMate ReVancedの3直接画面、NG編集6 tab、スレッドtoolbar 5操作、コピー／共有／次スレ作成／板へ／URL入力を開閉した。返信・次スレ作成dialog、共有chooser、検索・抽出、リストコントローラー、板一覧、WebView、Archiveも表示できた。「今すぐ再起動」でPID変更とHome復帰も確認した。
+- 最終候補で同一スレッドを再度20回連続開閉し20/20回成功した。更新buttonとpull-to-refresh後もprocessは生存し、全UI回帰検査後のAndroid crash bufferは空だった。外部投稿、履歴削除、NG追加の保存など不可逆・外部副作用を伴う確定操作は行わず、画面・dialog表示とcancel／backまで確認した。
+- v1.2.4のclean状態で`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。同じ最終RVPを公式CLI 6.0.0で165、統合済み179 XAPK、202 dev、統合済み241 XAPK、244 dev、245 dev、246 devへ適用し、全7世代で`"ChMate ReVanced" succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。ローカルRVPのSHA-256は`2a7ee15f09e391d347fbfb7acc523c8f1f6c14494c9f5405add01832946e48a2`だった。Pixel実機候補との差分は42 entry中`META-INF/MANIFEST.MF`だけだった。
+- OSV-Scanner 2.7.0でpatches lockfileの68 packageとextension lockfileの176 packageを検査し、既知脆弱性0件を確認した。
 - Pixel 10a / Android 17 / ReVanced Manager 2.6.0でv1.2.2を246 devへ適用すると、resource decode中に`/.local/share/apktool/framework`を作成できないlogが大量発生し、Binderの`DeadObjectException`を経て`ProcessRuntime.RemoteFailureException`となることを再現した。v1.2.3ではapktool framework保存先をprocess cacheへ切り替える。
 - v1.2.3候補では同じPixel 10aで準備2/2、patch適用2/2、保存2/2まで完走し、全9 DEX、resource、zipalign、Manager署名済みAPKの生成を確認した。`/.local/share`のframework作成失敗、Binder `DeadObjectException`、`RemoteFailureException`はいずれも再発しなかった。端末へのインストールは利用者の明示承認待ちとした。
 - v1.2.3のclean状態で`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。同じ最終RVPを公式CLI 6.0.0で165、統合済み179 XAPK、202 dev、統合済み241 XAPK、244 dev、245 dev、246 devへ適用し、全7世代で`"ChMate ReVanced" succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。ローカルRVPのSHA-256は`80da098cdf24b3a2d8196bfa0557b06e5c07fdb3b7d01354db7c4f79d96e32c3`だった。Pixel実機候補との差分は42 entry中`META-INF/MANIFEST.MF`だけだった。

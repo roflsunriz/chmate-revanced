@@ -27,3 +27,11 @@ Get-Content -Raw -LiteralPath .\COMMON-AGENTS.md
 - 作業開始前に [COMMON-AGENTS.md](COMMON-AGENTS.md) と [findings.md](findings.md) を先頭から末尾まで全文読む。
 - ファイル配置、使用ツール、実行コマンド、対応環境、文書構成、共通方針の例外と調査知見は `findings.md` に記録する。
 - ユーザーの指示、変更禁止、秘密情報の保護、検証・変更履歴を残す義務は共通指針に従い維持する。
+
+## リリース前の実機UI回帰検査
+
+- ChMateのpatchを変更したreleaseは、公開前に接続済み検証端末へ候補RVPをManagerで適用し、必要な明示承認を得てデータ保持更新する。
+- ホームの全tab・toolbar button・overflow menu、板一覧、スレッド一覧、スレッド画面、設定の全項目と子画面、ChMate ReVancedが追加する全画面を実際に開く。各画面の操作可能なbutton、menu、dialog、入力欄について、開閉、戻る、cancel、保存を副作用のない範囲で確認する。投稿、削除など外部・破壊的な確定操作は実行せず、直前まで開いてcancelする。
+- 更新buttonとpull-to-refreshを確認し、同一スレッドを20回以上連続で開閉する。各回で対象Activityとprocess生存を確認する。
+- 検査直前にAndroidのcrash bufferをclearし、検査後にChMate由来のFATAL EXCEPTIONが0件であることを確認する。主要画面はscreenshotまたはUI hierarchyも保存して表示崩れを確認する。
+- 旧版で存在しない画面は対象外理由を記録する。実機UI回帰検査、clean build、JUnit、Lint、全対応APK/XAPKのCLI適用がすべて成功するまでtag・releaseを作成しない。結果は`verification.md`へ記録する。

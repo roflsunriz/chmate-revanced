@@ -50,25 +50,53 @@ internal fun BytecodePatchContext.patchIntegrityChecks() {
             mutableMethod.replaceInstruction(index, "const/16 v${divide.registerA}, 0x1")
         }
     }
-    patchBoardListLifecycleIntegrity()
+    patchActivityLifecycleIntegrity()
 }
 
-private fun BytecodePatchContext.patchBoardListLifecycleIntegrity() {
-    val classDef = classDefs.firstOrNull {
-        it.type == "Ljp/syoboi/a2chMate/activity/BoardList2Activity;"
-    } ?: return
-    val superType = classDef.superclass
-    classDef.methods.filter { method ->
-        method.name in setOf("onStart", "onResume") &&
-            method.parameterTypes.isEmpty() && method.returnType == "V"
-    }.forEach { method ->
-        firstMethod(method).addInstructions(
-            0,
-            """
-                invoke-super {p0}, $superType->${method.name}()V
-                return-void
-            """.trimIndent(),
-        )
+internal val lifecycleIntegrityClassTypes = setOf(
+    "Ljp/syoboi/a2chMate/activity/BoardList2Activity;",
+    "Ljp/syoboi/a2chMate/activity/HomeActivity;",
+    "Ljp/syoboi/a2chMate/activity/ResListActivity;",
+    "Ljp/syoboi/a2chMate/activity/ResEditActivity;",
+    "Ljp/syoboi/a2chMate/activity/SearchActivity;",
+    "Ljp/syoboi/a2chMate/activity/ThreadListActivity;",
+    "Ljp/syoboi/a2chMate/activity/WebViewActivity;",
+)
+
+private val lifecycleTrapOpcodes = setOf(
+    Opcode.THROW,
+    Opcode.DIV_INT,
+    Opcode.DIV_INT_2ADDR,
+    Opcode.DIV_INT_LIT8,
+    Opcode.DIV_INT_LIT16,
+    Opcode.NEW_ARRAY,
+)
+
+private fun BytecodePatchContext.patchActivityLifecycleIntegrity() {
+    classDefs.filter { it.type in lifecycleIntegrityClassTypes }.forEach { classDef ->
+        val superType = classDef.superclass
+        classDef.methods.filter { method ->
+            method.name in setOf("onStart", "onResume", "onPause") &&
+                method.parameterTypes.isEmpty() && method.returnType == "V" &&
+                method.instructionsOrNull?.toList().orEmpty().let { instructions ->
+                    instructions.any { it.opcode in lifecycleTrapOpcodes } &&
+                        instructions.any { instruction ->
+                            if (instruction.opcode !in setOf(Opcode.INVOKE_SUPER, Opcode.INVOKE_SUPER_RANGE)) {
+                                return@any false
+                            }
+                            val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                            reference?.let { it.definingClass == superType && it.name == method.name } == true
+                        }
+                }
+        }.forEach { method ->
+            firstMethod(method).addInstructions(
+                0,
+                """
+                    invoke-super {p0}, $superType->${method.name}()V
+                    return-void
+                """.trimIndent(),
+            )
+        }
     }
 }
 
@@ -172,6 +200,9 @@ private val ALLOWED_INTERVENING_OPCODES = setOf(
 
 internal fun isIntegrityArrayIndexSetup(opcodes: List<Opcode>): Boolean =
     opcodes.all(ALLOWED_INTERVENING_OPCODES::contains)
+
+internal fun hasLifecycleTrapOpcode(opcodes: List<Opcode>): Boolean =
+    opcodes.any(lifecycleTrapOpcodes::contains)
 
 internal fun matchesIntegrityComparison(
     first: IntegrityArrayRead,

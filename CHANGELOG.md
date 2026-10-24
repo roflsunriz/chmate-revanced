@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-10-25
+
+### Fixed
+
+- 0.8.10.246 devの`ResListActivity`で、`onStart`／`onResume`のintegrity trapが内部状態により発火し、スレッドを開く際に断続的に終了する問題を修正した。
+- 「スレ検索」などで使われる`WebViewActivity`にも同型のライフサイクル修正を適用し、Web画面を開く際の終了を防止した。
+- スレッドの書き込み欄で使われる`ResEditActivity`にも同型の修正を適用し、返信ダイアログを開く際の終了を防止した。
+- 246 devの全Activityを横断確認し、ホーム・検索・スレッド一覧を含む7 Activityについて、super呼出しとthrow／divide trapが共存するライフサイクルmethodだけを構造判定して修正するよう一般化した。
+
 ## [1.2.3] - 2026-10-24
 
 ### Fixed
