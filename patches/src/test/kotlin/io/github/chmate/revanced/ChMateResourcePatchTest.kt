@@ -53,6 +53,34 @@ class ChMateResourcePatchTest {
     }
 
     @Test
+    fun `adds imageboard sources to native board settings`() {
+        val document = document(
+            """
+            <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+              <PreferenceCategory android:key="bbs" android:title="掲示板設定" />
+              <PreferenceCategory android:title="BBSMENU">
+                <Preference android:key="bbsMenuUrl" />
+              </PreferenceCategory>
+            </PreferenceScreen>
+            """.trimIndent(),
+        )
+
+        assertTrue(document.isBoardSettingsScreen())
+        document.addImageBoardSourcesPreference()
+        document.addImageBoardSourcesPreference()
+
+        val matching = (0 until document.getElementsByTagName("Preference").length)
+            .map { document.getElementsByTagName("Preference").item(it) as Element }
+            .filter { it.getAttribute("android:key") == "imageBoardSources" }
+        assertEquals(1, matching.size)
+        val intent = matching.single().getElementsByTagName("intent").item(0) as Element
+        assertEquals(
+            "app.revanced.extension.chmate.ImageBoardSourcesActivity",
+            intent.getAttribute("android:targetClass"),
+        )
+    }
+
+    @Test
     fun `deactivates analytics and telemetry collection`() {
         val application = applicationElement(
             """

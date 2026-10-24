@@ -7,7 +7,7 @@ import app.revanced.patcher.patch.bytecodePatch
 @Suppress("unused")
 val chMatePatch = bytecodePatch(
     name = "ChMate ReVanced",
-    description = "Collapses ads, blocks ad traffic, expands video details, repairs Niconico thumbnails, retries timed post errors, and adds User-Agent and restart controls.",
+    description = "Blocks ads, parallelizes thread refreshes, integrates imageboards and advanced NG into ChMate, expands video details, retries timed post errors, and adds User-Agent controls.",
 ) {
     compatibleWith("jp.co.airfront.android.a2chMate")
     dependsOn(chMateResourcePatch)
@@ -21,6 +21,8 @@ val chMatePatch = bytecodePatch(
         patchVideoMetadata()
         patchPostRetries()
         patchAdvancedNg()
+        patchDeepIntegrations()
+        patchParallelRefresh()
         renameSanitizedManifestClasses()
     }
 }

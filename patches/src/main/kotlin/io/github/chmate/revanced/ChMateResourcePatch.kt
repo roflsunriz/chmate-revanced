@@ -9,6 +9,7 @@ import org.w3c.dom.Element
 
 private const val SETTINGS_ACTIVITY = "app.revanced.extension.chmate.SettingsActivity"
 private const val IMAGE_BOARD_ACTIVITY = "app.revanced.extension.chmate.ImageBoardActivity"
+private const val IMAGE_BOARD_SOURCES_ACTIVITY = "app.revanced.extension.chmate.ImageBoardSourcesActivity"
 private const val ADVANCED_NG_ACTIVITY = "app.revanced.extension.chmate.AdvancedNgActivity"
 private const val SETTINGS_PREFERENCE_KEY = "chmateRevancedSettings"
 private const val BOOTSTRAP_PROVIDER = "app.revanced.extension.chmate.BootstrapProvider"
@@ -39,6 +40,15 @@ internal val chMateResourcePatch = resourcePatch {
                     setAttribute("android:exported", "false")
                     setAttribute("android:excludeFromRecents", "true")
                     setAttribute("android:label", "Imageboards")
+                    setAttribute("android:theme", "@android:style/Theme.Material.Light.NoActionBar")
+                })
+            }
+            if (!application.hasComponent("activity", IMAGE_BOARD_SOURCES_ACTIVITY)) {
+                application.appendChild(document.createElement("activity").apply {
+                    setAttribute("android:name", IMAGE_BOARD_SOURCES_ACTIVITY)
+                    setAttribute("android:exported", "false")
+                    setAttribute("android:excludeFromRecents", "true")
+                    setAttribute("android:label", "Imageboard sources")
                     setAttribute("android:theme", "@android:style/Theme.Material.Light.NoActionBar")
                 })
             }
@@ -150,11 +160,17 @@ internal val chMateResourcePatch = resourcePatch {
         val rootSettingsPaths = xmlResourcePaths.filter { path ->
             document(path).use(Document::isEmptyPreferenceScreen)
         }
-        if (rootSettingsPaths.isEmpty()) {
-            throw PatchException("Could not find the root ChMate PreferenceScreen")
-        }
         rootSettingsPaths.forEach { path ->
             document(path).use(Document::addSettingsPreference)
+        }
+        val boardSettingsPaths = xmlResourcePaths.filter { path ->
+            document(path).use(Document::isBoardSettingsScreen)
+        }
+        if (boardSettingsPaths.isEmpty()) {
+            throw PatchException("Could not find the ChMate board settings PreferenceScreen")
+        }
+        boardSettingsPaths.forEach { path ->
+            document(path).use(Document::addImageBoardSourcesPreference)
         }
 
         resourceFiles.forEach { file ->
@@ -249,6 +265,50 @@ internal fun Document.addSettingsPreference() {
             setAttribute("android:targetClass", SETTINGS_ACTIVITY)
         })
     })
+}
+
+internal fun Document.isBoardSettingsScreen(): Boolean {
+    val root = documentElement ?: return false
+    if (root.tagName != "PreferenceScreen") return false
+    val elements = root.getElementsByTagName("*")
+    var hasBoardCategory = false
+    var hasBbsMenuUrl = false
+    for (index in 0 until elements.length) {
+        val element = elements.item(index) as? Element ?: continue
+        when (element.getAttribute("android:key")) {
+            "bbs" -> hasBoardCategory = true
+            "bbsMenuUrl" -> hasBbsMenuUrl = true
+        }
+    }
+    return hasBoardCategory && hasBbsMenuUrl
+}
+
+internal fun Document.addImageBoardSourcesPreference() {
+    val root = documentElement ?: return
+    val existing = root.getElementsByTagName("Preference")
+    if ((0 until existing.length).any { index ->
+            (existing.item(index) as? Element)?.getAttribute("android:key") == "imageBoardSources"
+        }
+    ) return
+
+    val preference = createElement("Preference").apply {
+        setAttribute("android:key", "imageBoardSources")
+        setAttribute("android:title", "画像掲示板（4chan・ふたば・jschan）")
+        setAttribute("android:summary", "ChMateの板として追加し、標準の板一覧・スレッド一覧・レス画面で開きます")
+        appendChild(createElement("intent").apply {
+            setAttribute("android:targetPackage", "jp.co.airfront.android.a2chMate")
+            setAttribute("android:targetClass", IMAGE_BOARD_SOURCES_ACTIVITY)
+        })
+    }
+    val categories = root.getElementsByTagName("PreferenceCategory")
+    val boardCategory = (0 until categories.length)
+        .mapNotNull { categories.item(it) as? Element }
+        .firstOrNull { it.getAttribute("android:key") == "bbs" }
+    if (boardCategory?.nextSibling != null) {
+        root.insertBefore(preference, boardCategory.nextSibling)
+    } else {
+        root.appendChild(preference)
+    }
 }
 
 private fun ResourcePatchContext.sourceApkFile(): File {

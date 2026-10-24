@@ -9,6 +9,7 @@ import brut.directory.ExtFile
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.Locale
 import java.util.zip.ZipFile
 
 internal data class ObfuscatedFileResource(
@@ -95,8 +96,13 @@ private class BinaryXmlDecoder(apkFile: File) {
         val extFile = ExtFile(apkFile)
         val resourcesDecoder = ResourcesDecoder(Config.getDefaultConfig(), ApkInfo(extFile))
         resourcesDecoder.loadMainPkg()
+        val parser = object : AXmlResourceParser(resourcesDecoder.resTable) {
+            override fun getAttributeValue(index: Int): String =
+                super.getAttributeValue(index)
+                    ?: binaryXmlFallbackValue(getAttributeValueType(index), getAttributeValueData(index))
+        }
         decoder = ResXmlPullStreamDecoder(
-            AXmlResourceParser(resourcesDecoder.resTable),
+            parser,
             resourcesDecoder.newXmlSerializer(),
         )
     }
@@ -104,6 +110,21 @@ private class BinaryXmlDecoder(apkFile: File) {
     fun decode(bytes: ByteArray): String {
         val output = ByteArrayOutputStream()
         decoder.decode(ByteArrayInputStream(bytes), output)
-        return output.toString(Charsets.UTF_8)
+        return removeUnnamedXmlAttributes(output.toString(Charsets.UTF_8))
     }
+}
+
+internal fun removeUnnamedXmlAttributes(xml: String): String = Regex(
+    "\\s+(?:[A-Za-z_][A-Za-z0-9_.-]*:)?=\"[^\"]*\"",
+).replace(xml, "")
+
+internal fun binaryXmlFallbackValue(type: Int, data: Int): String = when (type) {
+    0x01 -> "@0x%08x".format(Locale.ROOT, data)
+    0x02 -> "?0x%08x".format(Locale.ROOT, data)
+    0x04 -> Float.fromBits(data).toString()
+    0x10 -> data.toString()
+    0x11 -> "0x%08x".format(Locale.ROOT, data)
+    0x12 -> if (data != 0) "true" else "false"
+    in 0x1c..0x1f -> "#%08x".format(Locale.ROOT, data)
+    else -> "0x%08x".format(Locale.ROOT, data)
 }

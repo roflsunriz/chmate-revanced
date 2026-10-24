@@ -14,6 +14,7 @@ public final class BootstrapProvider extends ContentProvider {
         }
 
         RuntimeState.initialize(getContext());
+        ImageBoardIntegration.initialize(getContext());
         if (getContext().getApplicationContext() instanceof Application) {
             AdViewCollapser.install((Application) getContext().getApplicationContext());
         }

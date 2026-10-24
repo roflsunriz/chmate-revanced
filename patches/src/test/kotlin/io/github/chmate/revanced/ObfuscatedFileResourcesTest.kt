@@ -21,4 +21,22 @@ class ObfuscatedFileResourcesTest {
         check("aG.xml" !in ObfuscatedFileResources.removeAliases(xml))
         check("#3333b5e5" in ObfuscatedFileResources.removeAliases(xml))
     }
+
+    @Test
+    fun `binary XML null values retain their typed scalar data`() {
+        assertEquals("@0x7f080123", binaryXmlFallbackValue(0x01, 0x7f080123))
+        assertEquals("?0x010100d4", binaryXmlFallbackValue(0x02, 0x010100d4))
+        assertEquals("true", binaryXmlFallbackValue(0x12, 1))
+        assertEquals("#ff336699", binaryXmlFallbackValue(0x1c, 0xff336699.toInt()))
+    }
+
+    @Test
+    fun `binary XML attributes without names are removed`() {
+        assertEquals(
+            "<view android:id=\"@id/title\" app:known=\"1\" />",
+            removeUnnamedXmlAttributes(
+                "<view android:id=\"@id/title\" android:=\"0x1\" =\"bad\" app:known=\"1\" />",
+            ),
+        )
+    }
 }

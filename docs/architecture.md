@@ -16,7 +16,13 @@ ApktoolがChMate独自のlayout属性を名前空間なしで復号した場合�
 
 `BootstrapProvider` が Application より先に共有状態を初期化し、Activity lifecycle callback を登録します。動的に追加された広告 View は global layout 後にも再走査されます。
 
+画像掲示板はアプリ内の`127.0.0.1:28282`だけで待ち受ける変換サーバーを使います。登録した4chan・ふたば・jschanの公開APIを読み、ChMateが既存の板として扱える`BBSMENU`、`subject.txt`、`dat`へ変換します。URL解析入口では元URLを同じローカル板・スレッドURLへ置き換えるため、板一覧・スレッド一覧・レス表示はChMate本来のActivityとDBを使います。
+
+ホームの更新は`AutoCheckWork`または旧版の`ReloadBookmarkTask2`が持つ既存処理を板単位、同一板では対象スレッド単位に最大4分割します。各ワーカーは元の取得・DB更新・例外処理へ戻るため、難読化されたネットワーク実装を複製しません。
+
 設定 Activity は `:revanced_settings` process で動作します。そのため ChMate の main process を終了してから、patch 時に記録した元の launcher Activity を安全に起動できます。設定値は同一 package の SharedPreferences へ同期保存します。
+
+従来の空`PreferenceScreen`がないCompose版では、設定Activityの既存contentを壊さず下端へ「ChMate ReVanced」を追加します。画像掲示板は掲示板設定XML、高度NGは既存NG編集Activityへ入口を置き、ReVanced設定には隔離しません。
 
 ## 防御範囲
 

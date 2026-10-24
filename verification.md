@@ -1,5 +1,14 @@
 # 検証手順
 
+## 2026-10-24: v1.2.0 画像掲示板・高度NG統合と並列更新
+
+- `ParallelRefreshBridgeTest`で同一板4件を4ワーカーへ分割し、実行区間が重なることとエラー件数の集約を確認した。別板は板単位で分割する。新版`AutoCheckWork`と旧版`ReloadBookmarkTask2`の逐次method入口へ同じbridgeを注入し、worker側だけ元methodを実行するDEXを確認した。
+- `ImageBoardIntegrationTest`で4chanの板・スレッドURLをloopbackの板URL・`test/read.cgi`へ変換し、ChMateが扱えない短いjschan IDを安定した9桁IDへ変換すること、一般HTTPS URLをjschanとして誤変換しないことを確認した。246 devの復号後掲示板設定XMLに`ImageBoardSourcesActivity`へのPreference、manifestに非公開ActivityとProvider、拡張DEXに`BBSMENU`・`subject.txt`・`dat`変換サーバーを確認した。
+- JDK 17のclean後に`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。ローカルRVPは42エントリ、SHA-256は`2d6e3f96f083fa547db7eac3f99e1454572292e2a575800d8d133355f84bce5d`で、Android DEXの`extensions/chmate.rve`とdeep integration／parallel refresh patchを含み、APK/XAPKを含まない。
+- OSV-Scanner 2.7.0で`patches/gradle.lockfile`の68パッケージと`extensions/chmate/gradle.lockfile`の176パッケージを検査し、既知脆弱性の検出は0件だった。`settings-gradle.lockfile`は依存エントリを持たず抽出対象にならない。GitHub Dependabotの未解決アラートとopen PRも0件だった。
+- 179の20 moduleと241の4 moduleはAPKEditor 1.4.9で統合した。同じ`patches-1.2.0.rvp`を165、179、202 dev、241、244 dev、245 dev、246 devへ公式CLI 6.0.0で適用し、全7世代で`ChMate ReVanced succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。
+- AQUOS SH-R80P / Android 16の公式Manager 2.6.0では、初回候補で246 devのbinary XML属性値がnullとなる失敗、次候補で属性名が空の`android:`となる失敗を再現した。型付きraw値の復元と名前なし属性だけの除外を追加し、JUnitと7世代CLIを再実行した。固定URLソースを残したまま複数の同名ローカル候補を追加するとAPKのパッチ選択画面が新しい候補を列挙しないため、公開後に固定URLをv1.2.0へ更新してManagerの最終適用を行う。
+
 ## 2026-10-19: CI高速化
 
 - 変更したGitHub Actionsをactionlint 1.7.12で検査し、エラー0件を確認した。

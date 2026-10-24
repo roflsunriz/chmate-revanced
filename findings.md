@@ -11,3 +11,7 @@
 - 4chan、ふたば、jschanはAPI・投稿form・encodingが別。独立engineとして扱い、4channel URLは実機SSL不具合時に4chanへ正規化しても読取API `a.4cdn.org` との役割を混同しない。
 - ローカル/Actionsの同版RVPはmanifest Timestamp差で全体SHAが一致しない。公開前はZIP entryとmanifest以外を比較し、公開後はrelease RVPと同梱checksumを照合する。
 - 広告通信の完全遮断はbytecode適用だけで断定せず、対象APK・実機のpacket観測で判定する。native/独自暗号/新SDK/Compose移行は追加調査対象。
+- 0.8.10.246 devの設定は空`PreferenceScreen`ではなくCompose化されている。設定入口は旧版のXML Preferenceと、新版の`SettingActivity.onCreate`後に既存contentを包む経路の両方へ接続する。
+- 画像掲示板をChMate標準画面で扱うには、元サイト別APIを直接ChMate内部modelへ増設するより、loopback限定の`BBSMENU`・`subject.txt`・`dat`変換とURL解析入口の書換えが版差に強い。任意HTTPS URLをjschan扱いせず、jschanは掲示板設定で登録済みのhost/boardだけを書き換える。
+- ホーム更新の実体は新版の`AutoCheckWork`、旧版の`ReloadBookmarkTask2`にある逐次処理である。元methodを再帰防止付きで最大4分割すると、難読化された取得・DB・error処理を複製せず並列化できる。
+- Android版Managerのapktoolは、246 devの難読化binary XMLで属性値または属性名をnullとして返す場合がある。値は型とraw dataから復元し、名前を復元できない属性だけを除外して不正な`android:`属性を作らない。
