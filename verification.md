@@ -6,6 +6,8 @@
 - v1.2.1のclean build後、公式CLI 6.0.0で165、統合済み179 XAPK、202 dev、統合済み241 XAPK、244 dev、245 dev、246 devへ同一RVPを適用し、全7世代で`"ChMate ReVanced" succeeded`、resource・全DEX再構築、zipalign、署名済みAPK保存を確認した。
 - v1.2.1のclean状態で`:patches:test`、`:extensions:chmate:test`、`:extensions:chmate:lint`、`:patches:buildAndroid`が成功した。ローカルRVPは42 entryで、SHA-256は`41692feb214ba022e40ab24605de17406189b46061723d820f561100d8f33479`だった。
 - mainへのpush後、GitHub Actions CI run `40090485509`でも同じJUnit・Android Lint・RVP buildが成功した。
+- 文書更新後のCI run `40090641248`と公開前Release run `40090645487`が成功した。annotated tag `v1.2.1`起点のRelease run `40090690578`も成功し、`patches-1.2.1.rvp`、checksum、`patches.json`の3資産だけを公開した。公開RVPのSHA-256は`940835b94cf22607807e1a3ed58f182d794a0f158e78c17a99b7b5593b7e8d3c`で同梱checksumと一致し、latest APIと`patches.json`はいずれもv1.2.1を指した。
+- AQUOSのManagerからローカル候補sourceを除去し、README記載の固定`releases/latest/download/patches.json`を再登録した。Managerが`ChMate ReVanced Patches v1.2.1`と1 patchを取得することを確認し、端末上の候補RVPと0 byteの保存試行fileを削除した。
 - OSV-Scanner 2.7.0でpatches lockfileの68 packageとextension lockfileの176 packageを検査し、既知脆弱性0件を確認した。settings lockfileは対象packageがなくextractor対象外だった。
 - 公開後の固定URL v1.2.0をManagerへ更新して246 devを再適用すると、binary XMLのnull値・不正属性名は解消したが、`android:key`を失った掲示板設定を検出できず停止した。BBSMENU Preferenceクラスによるv1.2.1候補でもManager復号結果にはクラス名が残らなかったため、旧版のXML統合を保ちつつ、Compose版は実行時の「掲示板設定／BBSMENU」表示から同画面を識別するfallbackへ変更した。
 
