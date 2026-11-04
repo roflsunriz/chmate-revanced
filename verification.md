@@ -26,6 +26,9 @@
 - 同一スレッドの開閉20回と連続/単体画像表示20回で、各回の対象Activityと同一PIDの生存を確認した。最終候補でもsportschanの板から同一スレッドを20回開閉した。検査直前にcrash bufferをclearし、検査後のChMate由来FATAL EXCEPTIONは0件。主要画面のscreenshot・UI hierarchy、回数別のActivity/PID記録はGit管理外の`output/qa/issue16/`へ保存した。246 devの通常UIで使う単体画像はImageListActivity内のoverlayで検査した。ImagesViewer2ActivityはDEX構造を確認し、165の本来のonPause処理も保持した。補助的な直接起動は自動承認審査に拒否されたため実行していない。
 - 追加画面をArabicのRTL・縦向き1260×2730・横向き2730×1260で確認し、横向きでもscroll後に保存・板を開くbuttonを操作できた。app localeは元の継承設定`[]`、回転は`lock 0`へ戻した。画像掲示板の保存内容は元のsportschanだけへ復元し、process再起動後も検証用3板が復活しないことを確認した。検査で切り替えた既存スイッチも検査前画面と照合して復元した。
 - 今回の実機はAQUOS / 246 devのみで、Pixel 10aと旧ChMate各版の実機UIは再検査していない。旧版は7世代のCLI適用と、165の画像ライフサイクル保持などのDEX照合で補った。端末既存のVPNを維持しており、このUI検査をpatch単独のpacket遮断検査の代用にはしていない。
+- 修正commit `cf8227a`の[通常CI](https://github.com/roflsunriz/chmate-revanced/actions/runs/41808159570)と[公開前ビルド](https://github.com/roflsunriz/chmate-revanced/actions/runs/41808159138)は成功。公開前artifactの46エントリは、manifestのビルド時刻を除きローカル検証用RVPと完全一致した。
+- 注釈付きタグ`v1.2.5`からの[公開workflow](https://github.com/roflsunriz/chmate-revanced/actions/runs/41808811436)は、初回のchecksum uploadがHTTP 404で失敗した後、失敗jobの再実行で成功した。[Release](https://github.com/roflsunriz/chmate-revanced/releases/tag/v1.2.5)はRVP・SHA-256・`patches.json`の3資産だけを公開した。配布RVPのSHA-256は`f1a0e1a95df14886516a88f92fc0a1c0412661bae3e5113dc26d08303ec50912`で照合ファイルと一致し、実装エントリも検証用RVPと完全一致した。固定`latest/download/patches.json`はHTTP 200で同じタグ・RVPを指した。
+- Managerから候補ソースを除去して固定URLを登録し直し、cold start後に`v1.2.5`・1 patch・自動更新ON・エラーなしを確認した。他アプリのパッチソースは保持した。端末の今回作成した一時ファイル36件とADB forwardを除去した。PCでは広い一括削除が自動承認審査に拒否されたため、今回のCLI生成物と確認できるファイル名へ限定し、古いAPK71件・コンパイル一時directory71件を削除した。検証証跡、更新前APK、最終Manager APK、署名鍵のbackupはGit管理外で保持する。Issue #16は公開確認後にcompletedでcloseした。
 - 既存Gradle plugin 1.0.0-dev.11由来のGradle 10/11向け非推奨警告と、同pluginが使うSDK parserのversion警告は残る。現在の固定Gradle 9.8.2で品質ゲートは成功し、警告は抑制していない。将来のGradle major更新時は上流pluginの対応が必要。
 
 ## 2026-10-24: v1.2.0 画像掲示板・高度NG統合と並列更新
