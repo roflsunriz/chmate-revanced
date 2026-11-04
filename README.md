@@ -25,7 +25,16 @@ ChMate (`jp.co.airfront.android.a2chMate`) 向けの ReVanced Patch です。ChM
 
 動画情報カードは一つのレスにつき先頭16件まで表示します。サービス側が公開しない項目は表示しません。ニコニコ動画のいいね数は公式検索APIの日次更新を反映するため、動画ページの値と一時的に差が出る場合があります。
 
-画像掲示板は「設定」→「掲示板設定」→「画像掲示板（4chan・ふたば・jschan）」で、板のHTTPS URLを1行ずつ登録します。保存後に同じ掲示板設定の「板一覧を取得/更新」を実行すると、ChMateの板一覧へ追加されます。4chanとふたば、登録済みのjschan系サイトは「URLを指定して開く」へ元の板・スレッドURLを入力しても開けます。内部では`127.0.0.1`だけで待ち受ける変換層が各サイトのAPIをChMateの`BBSMENU`・`subject.txt`・`dat`形式へ変換します。jschan系では対象サイトが`catalog.json`と`thread/{id}.json`を公開している必要があります。
+画像掲示板は、次の手順でChMate標準の一覧・スレッド画面から使えます。
+
+1. ChMateの「設定」画面下部にある「画像掲示板の板」を開きます。旧版では「設定」→「掲示板設定」→「画像掲示板（4chan・ふたば・jschan）」です。
+2. 板またはスレッドのHTTPS URLを1行ずつ入力して「保存」を押します。たとえば、4chanは`https://boards.4chan.org/po/`、ふたば料理板は`https://dat.2chan.net/t/futaba.htm`、sportschanは`https://sportschan.org/librejp/`です。
+3. 保存欄の下にある「板を開く」ボタンを押すと、その板のスレッド一覧を開けます。ホームの「板一覧」にも追加するには、「設定」→「掲示板・BBSMENU」（旧版は「掲示板設定」）で「板一覧を取得/更新」を実行してください。既存のBBSMENU URLは上書きしません。5枠とも使用中の場合は、不要な枠を空けてから保存し直してください。
+4. スレッド一覧で読みたいスレッドを選びます。画像のタップでChMateの画像表示へ進めます。更新は通常の再取得操作を使います。
+
+ChMateの「URLを開く」へ元のスレッドURLを入力することもできます。4chan・ふたばに加え、`https://sportschan.org/librejp/thread/16592.html`のようなjschanの`/板名/thread/番号.html`形式は、板を事前登録せず直接開けます。jschanの板URLだけを開く場合は、先に上の手順で登録してください。対応する板・スレッド形式に一致しないURLは従来どおり扱います。
+
+内部では`127.0.0.1`だけで待ち受ける変換層が各サイトのAPIをChMateの`BBSMENU`・`subject.txt`・`dat`形式へ変換します。jschan系では対象サイトが`catalog.json`と`thread/{id}.json`を公開している必要があります。画像掲示板への投稿は、ブラウザで元サイトの投稿フォームとCAPTCHAを使ってください。ChMate標準の書き込み欄から画像掲示板へ送信する機能はありません。
 
 高度なNGはChMateのNG編集画面の「高度なNGルール」から編集します。1ルール内の条件はすべて一致したときに適用されます。文字列には本文・名前・ID・トリップ・ﾜｯﾁｮｲ・IP・BE・URL・スレッド名などを指定でき、含む・正規表現・大小無視の正規表現・あいまい一致から選べます。数値にはレス番号・改行数・文字数・同じIDのレス数・参照数・被参照数・スレッドのレス数、時間には投稿曜日・時刻・投稿からの経過分を指定できます。板またはスレッドのURLを入力すると適用範囲を限定できます。通常あぼーんは「あぼーん」行を残し、透明あぼーんは行と空間を消します。設定後はスレッドを開き直してください。既存ChMateのNG設定はそのまま使えます。
 
@@ -41,15 +50,23 @@ https://github.com/roflsunriz/chmate-revanced/releases/latest/download/patches.j
 
 手動で追加する場合は `patches-<version>.rvp` をダウンロードし、「ストレージから選択」で `.rvp` をそのまま読み込みます。ZIP への展開は不要です。
 
+ChMate用のパッチソースは、使う版を1つだけ登録してください。旧版と手動追加した新版が重複すると、選択画面の版と実際に適用される処理が一致しない場合があります。重複している場合は旧版のソースを削除し、Managerを終了して開き直してから適用してください。通常の更新には、上の固定URLを1つ登録する方法を推奨します。
+
 同じ Release にある `patches.json` はその版の `.rvp` を参照する ReVanced API 形式の更新情報、`.rvp.sha256` はダウンロードした patch bundle の照合用です。ChMate APK、XAPK、patch 済み APK は配布しません。
 
 ## 互換性の考え方
 
-この内容は [findings.md](findings.md#readme-1) にまとめています。
+版番号や難読化されたクラス名を照合する代わりに、Android API、命令構造、リソースの特徴から対象を検出します。検証対象は0.8.10.165、179、202 dev、241、244 dev、245 dev、246 devです。将来版の適用・動作は保証せず、変更時に同じ検査を繰り返します。[検証記録](verification.md)も参照してください。
 
 ## ビルド
 
-この内容は [findings.md](findings.md#readme-2) にまとめています。
+JDK 17、Android SDK、GitHub Packagesを読み取れる資格情報が必要です。資格情報を環境変数へ設定し、次を実行します。詳細と更新時の検査は[更新手順](how-to-update.md)を参照してください。
+
+```powershell
+.\gradlew.bat --no-daemon :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid
+```
+
+成果物は`patches/build/libs/patches-<version>.rvp`です。
 
 ## 適用と確認
 
@@ -95,7 +112,7 @@ GPL-3.0-only。詳細は [LICENSE](LICENSE) を参照してください。
 
 ## 依存更新の自動処理
 
-この内容は [findings.md](findings.md#readme-3) にまとめています。
+Dependabotの更新確認と自動マージは毎月28日（Asia/Tokyo）にまとめます。成功したCIと対象commitを確認して取り込み、失敗時は修正して再検証します。手順は[更新手順](how-to-update.md#dependabot-pr-の更新)を参照してください。
 
 ## 開発時の参照先
 

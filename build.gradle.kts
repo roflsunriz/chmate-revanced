@@ -22,7 +22,8 @@ allprojects {
     configurations.configureEach {
         resolutionStrategy.eachDependency {
             val securedVersion = when {
-                requested.group == "io.netty" -> "4.2.19.Final"
+                requested.group == "io.netty" -> "4.2.20.Final"
+                requested.group == "com.google.guava" && requested.name == "guava" -> "33.8.0-jre"
                 requested.group == "org.bouncycastle" -> "1.86"
                 requested.group == "com.google.protobuf" -> "4.36.2"
                 requested.group == "org.apache.commons" && requested.name == "commons-lang3" ->

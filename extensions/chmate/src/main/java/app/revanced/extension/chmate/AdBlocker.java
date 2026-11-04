@@ -38,6 +38,7 @@ public final class AdBlocker {
             "ironsrc.com",
             "pangle.io",
             "pangleglobal.com",
+            "d.socdm.com",
             "unityads.unity3d.com"
     ));
 

@@ -68,7 +68,13 @@ final class ImageBoardProxyServer {
     }
 
     static void rememberThread(String token, long localId, long remoteId) {
-        THREADS.put(token + ':' + localId, remoteId);
+        String key = token + ':' + localId;
+        Long previous = THREADS.put(key, remoteId);
+        Context context = applicationContext;
+        if (context != null && (previous == null || previous != remoteId)) {
+            context.getSharedPreferences("revanced_imageboard_threads_v1", Context.MODE_PRIVATE)
+                    .edit().putLong(key, remoteId).apply();
+        }
     }
 
     private static void accept(ServerSocket server) {
@@ -114,19 +120,28 @@ final class ImageBoardProxyServer {
         if (context == null) return Response.notFound();
         if ("/bbsmenu".equals(path) || "/bbsmenu/".equals(path)) return bbsMenu(context);
 
-        String[] parts = path.split("/");
+        String[] parts = path.split("/", -1);
         if (parts.length >= 3 && "test".equals(parts[1]) && "read.cgi".equals(parts[2])
                 && parts.length >= 5) {
             return thread(context, parts[3], parseLong(parts[4]));
         }
         if (parts.length < 3) return Response.notFound();
         String token = parts[1];
+        if ("SETTING.TXT".equals(parts[2])) {
+            ImageBoardClient.Board board = ImageBoardIntegration.findBoard(context, token);
+            return board == null ? Response.notFound() : Response.ok(
+                    "text/plain; charset=Shift_JIS", settingData(board).getBytes(SHIFT_JIS));
+        }
         if ("subject.txt".equals(parts[2])) return subject(context, token);
         if (parts.length >= 4 && "dat".equals(parts[2]) && parts[3].endsWith(".dat")) {
             return thread(context, token, parseLong(parts[3].substring(0, parts[3].length() - 4)));
         }
         if (parts.length == 3 && parts[2].isEmpty()) return boardPage(context, token);
         return Response.notFound();
+    }
+
+    static String settingData(ImageBoardClient.Board board) {
+        return "BBS_TITLE=" + label(board) + "\nBBS_NONAME_NAME=名無しさん\n";
     }
 
     private static Response bbsMenu(Context context) {
@@ -191,6 +206,10 @@ final class ImageBoardProxyServer {
             ImageBoardClient.Board board) throws Exception {
         Long mapped = THREADS.get(token + ':' + localId);
         if (mapped != null) return mapped;
+        long stored = applicationContext.getSharedPreferences(
+                "revanced_imageboard_threads_v1", Context.MODE_PRIVATE)
+                .getLong(token + ':' + localId, 0);
+        if (stored > 0) return stored;
         for (ImageBoardClient.ThreadEntry entry : catalog(token, board)) {
             long candidate = localThreadId(board, entry.id);
             rememberThread(token, candidate, entry.id);
@@ -210,8 +229,15 @@ final class ImageBoardProxyServer {
         return loaded;
     }
 
-    private static String datBody(ImageBoardClient.Post post) {
-        StringBuilder body = new StringBuilder(datText(post.comment).replace("\n", "<br>"));
+    static String datBody(ImageBoardClient.Post post) {
+        String comment = post.comment == null ? "" : post.comment;
+        StringBuilder body = new StringBuilder();
+        boolean firstLine = true;
+        for (String line : comment.split("\\r\\n|\\r|\\n", -1)) {
+            if (!firstLine) body.append("<br>");
+            body.append(datText(line));
+            firstLine = false;
+        }
         if (post.thumbnailUrl != null) body.append("<br>").append(datText(post.thumbnailUrl));
         if (post.mediaUrl != null && !post.mediaUrl.equals(post.thumbnailUrl)) {
             body.append("<br>").append(datText(post.mediaUrl));
@@ -231,9 +257,10 @@ final class ImageBoardProxyServer {
         return kind + " - " + board.host + "/" + board.code;
     }
 
-    private static String datText(String value) {
+    static String datText(String value) {
         if (value == null) return "";
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return value.replace('\r', ' ').replace('\n', ' ')
+                .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 .replace("<br>", "&lt;br&gt;");
     }
 

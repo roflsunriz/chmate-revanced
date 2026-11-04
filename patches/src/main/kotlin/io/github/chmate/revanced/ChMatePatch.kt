@@ -15,6 +15,7 @@ val chMatePatch = bytecodePatch(
 
     apply {
         patchIntegrityChecks()
+        patchNativeAdViews()
         patchNetworkBoundaries()
         patchNiconicoThumbnails()
         patchNiconicoVideoLinks()

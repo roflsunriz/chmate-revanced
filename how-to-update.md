@@ -39,6 +39,8 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 
 ## 3. patch 適用を検証する
 
+Manager 2.6.0では、同じChMate patch classを含む公開ソースとローカル候補ソースを同時登録すると、候補の拡張DEXと旧版のpatch処理が混在する場合がある。候補検査では旧版のChMate用ソースを一時的に外し、Managerをforce-stopしてから候補だけで適用する。他アプリ用のソースやManagerの署名設定は変更しない。公開後は候補ソースを削除し、READMEの固定URLへ戻してManagerを再起動する。APK保存後は、対象methodのpatch内容までCLI生成物と照合する。
+
 現在版と一つ前の版へ同じ `.rvp` を適用し、それぞれで次を確認します。
 
 - patch が例外なく完了し、署名後の APK をインストールできる
@@ -62,7 +64,7 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 - ニコニコ動画の既知の公開動画リンクでサムネイルが表示され、動画を開く元の導線が維持される。動画情報APIが失敗する場合も既存の画像取得処理へ戻る
 - ニコニコ動画の`sm`・`so`・`nm`リンクと、YouTube・Dailymotionなどの公開動画リンクで、提供されるメタデータのカードがレス内に表示される。カードのタップで省略表示を展開・復帰でき、表示設定をオフにしてスレッドを開き直すとカードが消える
 - `scripts/mock-chmate-board.py`のローカル模擬掲示板で、秒数を明示する投稿間隔エラーの後に返信と新規スレッド作成が待機して再送される。秒数のないエラーや別種のエラーでは自動再送せず、繰り返しも最大2回で止まる
-- 「設定」→「掲示板設定」→「画像掲示板」で4chan・ふたば・jschan系の公開板URLを登録し、「板一覧を取得/更新」後にChMate標準の板一覧・スレッド一覧・レス画面で一覧、スレッド、画像、更新を確認する。「URLを指定して開く」でも4chan・ふたばと登録済みjschanの板・スレッドを開く。jschan系では公開`catalog.json`と`thread/{id}.json`の応答を先に確かめる
+- 「設定」→「掲示板設定」→「画像掲示板」で4chan・ふたば・jschan系の公開板URLを登録し、「板を開く」ボタンと「板一覧を取得/更新」後のChMate標準の板一覧から、スレッド一覧・レス・画像・更新を確認する。「URLを開く」でも4chan・ふたば、登録済みjschan板、未登録jschanの`/板/thread/番号.html`を開く。sportschanのIssue #16記載URLも対象にし、再起動後の再読込、登録板を削除した後に復活しないことも確認する。jschan系では公開`catalog.json`と`thread/{id}.json`の応答を先に確かめる
 - ChMate本来のNG編集画面から高度NGを開き、文字列・数値・時間条件、複数条件AND、否定、板/スレッド範囲、通常/透明、連鎖を保存・再編集・無効化・削除できることを確認する。本文が一致する通常レスと、そのレスへの参照を含むローカル模擬スレッドを開き、通常あぼーんは行が残り、透明あぼーんは行と空間が消えること、無効化で本文が戻ることを確認する。既存NGや別レスを巻き込まないかスクロール往復でも確かめる
 
 通信確認は少なくとも、コールドスタート、スレッド一覧、スレッド表示を数分ずつ行います。端末の Private DNS や別の広告ブロッカーは無効にし、この patch 単独の結果を測ります。
@@ -96,7 +98,7 @@ ChMate、ReVanced Patcher、広告 SDK のいずれかが更新されたとき�
 4. `docs/release-notes/v<version>.md` を作り、APK のハッシュ、端末 / Android 版、実測結果を記録する。ただし APK 自体は添付しない。
 5. クリーンビルドと全検証、依存関係の脆弱性検査を再実行する。
 6. `main` へ push した後、GitHub Actions の `Release` workflow を手動実行する。手動実行は Release を作らず、同じテスト、Lint、`.rvp` 生成、SHA-256 検証を行って Actions artifact を作るため、公開前確認に使う。
-7. artifact の内容をローカル成果物と照合し、問題がなければ注釈付きタグ `v<version>` を `gradle.properties` と同じ commit に作成して push する。`.rvp` のmanifestにはビルド時刻が入るため、ローカルとActionsのファイル全体のSHA-256は一致しなくてもよい。ZIP内のエントリ名とmanifest以外の内容、manifestの版番号を比較する。
+7. artifact の内容をローカル成果物と照合し、問題がなければ注釈付きタグ `v<version>` を `gradle.properties` と同じ commit に作成して push する。`.rvp` のmanifestにはビルド時刻が入り、OS差で拡張DEXのlambda・nest accessor番号も変わる場合がある。全体SHAが異なる場合は、ZIP entry名、patch class、拡張DEXのclass・method・文字列・逆コンパイル後の処理とmanifest版番号を照合する（[findings.md](findings.md)参照）。
 8. タグ起点の `Release` workflow が成功し、GitHub Release に `patches-<version>.rvp`、`patches-<version>.rvp.sha256`、`patches.json` の3資産だけが公開されたことを確認する。配布ファイルのSHA-256を同梱の照合ファイルと比較し、`patches.json` の `version` と `download_url` が同じタグと `.rvp` を指すこと、READMEの固定URLから取得できること、ManagerがURLから読み込めることも確認する。
 
 Release workflow は ReVanced 公式と同じ `.rvp` 形式を直接配布し、ReVanced Manager が URL から更新できる API 形式の `patches.json` も生成します。ZIP は作りません。タグ名と `gradle.properties` の version が一致しない場合、release note がない場合、テスト・Lint・checksum・`patches.json` の検証のいずれかが失敗した場合は公開しません。

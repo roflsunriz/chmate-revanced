@@ -28,6 +28,9 @@ internal object AdElementClassifier {
         "com.facebook.ads",
         "com.inmobi",
         "net.nend.android",
+        "com.socdm.d.adgeneration",
+        "com.pubmatic.sdk",
+        "com.vungle.ads",
     )
 
     fun isAdvertisement(tagName: String, idValue: String?, tagValue: String?): Boolean {

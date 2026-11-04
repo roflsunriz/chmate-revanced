@@ -91,6 +91,9 @@ public final class AdViewCollapser implements Application.ActivityLifecycleCallb
                 || className.contains(".applovin.")
                 || className.contains(".unity3d.ads.")
                 || className.contains(".net.nend.android.")
+                || className.startsWith("com.socdm.d.adgeneration.")
+                || className.startsWith("com.pubmatic.sdk.")
+                || className.startsWith("com.vungle.ads.")
                 || className.endsWith(".adview")
                 || className.contains("bannerad")) {
             return true;
@@ -119,6 +122,12 @@ public final class AdViewCollapser implements Application.ActivityLifecycleCallb
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9_]+", "_");
         return AD_RESOURCE_NAMES.contains(normalized);
+    }
+
+    public static void collapseNativeAd(View view) {
+        view.setTag("revanced_ad_container");
+        view.setPadding(0, 0, 0, 0);
+        collapse(view);
     }
 
     private static void collapse(View view) {

@@ -1,14 +1,19 @@
 package io.github.chmate.revanced
 
 import app.revanced.patcher.extensions.addInstructions
+import app.revanced.patcher.extensions.addInstructionsWithLabels
+import app.revanced.patcher.extensions.ExternalLabel
 import app.revanced.patcher.extensions.instructionsOrNull
 import app.revanced.patcher.firstMethod
 import app.revanced.patcher.patch.BytecodePatchContext
 import app.revanced.patcher.patch.PatchException
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 
 private const val SETTINGS_ACTIVITY_TYPE = "Ljp/syoboi/a2chMate/activity/SettingActivity;"
 private const val NG_EDITOR_ACTIVITY_TYPE = "Ljp/syoboi/a2chMate/activity/NGEditorActivity;"
@@ -24,6 +29,57 @@ internal fun BytecodePatchContext.patchDeepIntegrations() {
     patchActivityEntry(SETTINGS_ACTIVITY_TYPE, SETTINGS_INTEGRATION)
     patchActivityEntry(NG_EDITOR_ACTIVITY_TYPE, ADVANCED_NG_INTEGRATION)
     patchImageBoardUrlParser()
+    patchImageBoardUrlFactories()
+    patchImageBoardSchemeFallback()
+}
+
+private fun BytecodePatchContext.patchImageBoardSchemeFallback() {
+    classDefs.filter { classDef ->
+        classDef.methods.any { method ->
+            method.instructionsOrNull?.any { instruction ->
+                ((instruction as? ReferenceInstruction)?.reference as? StringReference)?.string ==
+                    "external_board_scheme_cache"
+            } == true
+        }
+    }.forEach { classDef ->
+        classDef.methods.filter { method ->
+            AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == "Z" &&
+                method.parameterTypes.map(CharSequence::toString) ==
+                    listOf("Ljava/lang/String;", "Ljava/lang/String;")
+        }.forEach { method ->
+            val mutableMethod = firstMethod(method)
+            if (mutableMethod.implementation!!.registerCount <= 2) {
+                throw PatchException("External board scheme guard has no local register")
+            }
+            val entry = mutableMethod.instructionsOrNull!!.first()
+            mutableMethod.addInstructionsWithLabels(0, """
+                invoke-static/range {p1 .. p1}, $IMAGE_BOARD_INTEGRATION->isProxyUrl(Ljava/lang/String;)Z
+                move-result v0
+                if-eqz v0, :original_scheme_guard
+                const/4 v0, 0x0
+                return v0
+            """.trimIndent(), ExternalLabel("original_scheme_guard", entry))
+        }
+    }
+}
+
+private fun BytecodePatchContext.patchImageBoardUrlFactories() {
+    classDefs.single { it.type == BBS_URL_INFO_TYPE }.methods
+        .filter { it.returnType == "Ljava/lang/String;" }
+        .forEach { method ->
+            val mutableMethod = firstMethod(method)
+            val returns = mutableMethod.instructionsOrNull.orEmpty().mapIndexedNotNull { index, instruction ->
+                if (instruction.opcode == Opcode.RETURN_OBJECT) {
+                    index to (instruction as OneRegisterInstruction).registerA
+                } else null
+            }
+            returns.asReversed().forEach { (index, register) ->
+                mutableMethod.addInstructions(index, """
+                    invoke-static/range {v$register .. v$register}, $IMAGE_BOARD_INTEGRATION->rewriteProxyUrl(Ljava/lang/String;)Ljava/lang/String;
+                    move-result-object v$register
+                """.trimIndent())
+            }
+        }
 }
 
 private fun BytecodePatchContext.patchActivityEntry(activityType: String, integrationType: String) {
@@ -53,36 +109,12 @@ private fun BytecodePatchContext.patchImageBoardUrlParser() {
     if (classDefs.none { it.type == BBS_URL_INFO_TYPE }) {
         throw PatchException("Could not find ChMate BBSUrlInfo")
     }
-    val contextCandidates = classDefs.flatMap { classDef ->
-        classDef.methods.filter { method ->
-            method.returnType == BBS_URL_INFO_TYPE &&
-                method.parameterTypes.map(CharSequence::toString) ==
-                    listOf("Landroid/content/Context;", "Ljava/lang/String;")
-        }
+    val coreCandidates = classDefs.flatMap { classDef ->
+        classDef.methods.filter(::isImageBoardCoreParser)
     }
-    val parser = when {
-        contextCandidates.size == 1 -> contextCandidates.single()
-        contextCandidates.isEmpty() -> {
-            val coreCandidates = classDefs.flatMap { classDef ->
-                classDef.methods.filter { method ->
-                    method.returnType == BBS_URL_INFO_TYPE &&
-                        method.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/String;") &&
-                        method.instructionsOrNull?.any { instruction ->
-                            val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
-                            reference?.definingClass == "Landroid/net/Uri;" &&
-                                reference.name == "parse" &&
-                                reference.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/String;")
-                        } == true
-                }
-            }
-            coreCandidates.singleOrNull() ?: throw PatchException(
-                "Could not identify legacy ChMate URL parser: ${coreCandidates.size} candidates",
-            )
-        }
-        else -> throw PatchException(
-            "Could not identify ChMate URL parser: ${contextCandidates.size} candidates",
-        )
-    }
+    val parser = coreCandidates.singleOrNull() ?: throw PatchException(
+        "Could not identify ChMate core URL parser: ${coreCandidates.size} candidates",
+    )
     val stringParameter = parser.parameterTypes.indexOfFirst { it.toString() == "Ljava/lang/String;" }
     val parameterRegister = stringParameter + if (AccessFlags.STATIC.isSet(parser.accessFlags)) 0 else 1
     val mutableMethod = firstMethod(parser)
@@ -94,3 +126,13 @@ private fun BytecodePatchContext.patchImageBoardUrlParser() {
         """.trimIndent(),
     )
 }
+
+internal fun isImageBoardCoreParser(method: Method): Boolean =
+    method.returnType == BBS_URL_INFO_TYPE &&
+        method.parameterTypes.count { it.toString() == "Ljava/lang/String;" } == 1 &&
+        method.parameterTypes.all { it.toString() in setOf("Ljava/lang/String;", method.definingClass) } &&
+        method.instructionsOrNull?.any { instruction ->
+            val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+            reference?.definingClass == "Landroid/net/Uri;" && reference.name == "parse" &&
+                reference.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/String;")
+        } == true

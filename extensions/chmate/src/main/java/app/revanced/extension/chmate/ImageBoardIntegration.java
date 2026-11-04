@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,6 +24,37 @@ public final class ImageBoardIntegration {
     private ImageBoardIntegration() {
     }
 
+    public static boolean isProxyUrl(String input) {
+        if (input == null) return false;
+        try {
+            return isProxyUri(URI.create(input));
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isProxyUri(URI uri) {
+        String path = uri.getRawPath();
+        return LOOPBACK_HOST.equals(uri.getHost()) && path != null
+                && path.matches("/(?:test/read\\.cgi/)?ib[0-9a-f]{16}/.*")
+                && ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()));
+    }
+
+    public static String rewriteProxyUrl(String input) {
+        if (input == null) return null;
+        try {
+            URI uri = URI.create(input);
+            String path = uri.getRawPath();
+            if (isProxyUri(uri)) {
+                return "http://" + LOOPBACK_HOST + ":" + LOOPBACK_PORT + path
+                        + (uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery());
+            }
+        } catch (IllegalArgumentException ignored) {
+            // Preserve malformed input for the original client's error handling.
+        }
+        return input;
+    }
+
     static void initialize(Context context) {
         if (context == null) return;
         applicationContext = context.getApplicationContext();
@@ -34,16 +66,17 @@ public final class ImageBoardIntegration {
         ImageBoardClient.Board board = ImageBoardClient.parseBoard(input);
         if (board == null) return input;
         Context context = applicationContext;
+        long remoteThreadId = ImageBoardClient.parseThreadId(board, input);
         if (board.kind == ImageBoardClient.Kind.JSCHAN
+                && remoteThreadId == 0
                 && (context == null || !isConfigured(context, board))) return input;
         String token = token(board);
-        TRANSIENT_BOARDS.put(token, board);
         if (context != null) {
             rememberBoard(context, board);
             ensureBbsMenuRegistered(context);
             ImageBoardProxyServer.start(context);
         }
-        long remoteThreadId = ImageBoardClient.parseThreadId(board, input);
+        TRANSIENT_BOARDS.put(token, board);
         if (remoteThreadId == 0) return localBoardUrl(token);
         long localThreadId = ImageBoardProxyServer.localThreadId(board, remoteThreadId);
         ImageBoardProxyServer.rememberThread(token, localThreadId, remoteThreadId);
@@ -59,9 +92,6 @@ public final class ImageBoardIntegration {
                 ImageBoardClient.Board board = ImageBoardClient.parseBoard(line);
                 if (board != null) unique.put(board.pageUrl, board);
             }
-        }
-        for (ImageBoardClient.Board board : TRANSIENT_BOARDS.values()) {
-            unique.put(board.pageUrl, board);
         }
         return new ArrayList<>(unique.values());
     }
@@ -83,10 +113,14 @@ public final class ImageBoardIntegration {
         for (ImageBoardClient.Board board : boards) {
             if (value.length() > 0) value.append('\n');
             value.append(board.pageUrl);
-            TRANSIENT_BOARDS.put(token(board), board);
         }
-        return UserAgentOverride.preferences(context).edit()
+        boolean saved = UserAgentOverride.preferences(context).edit()
                 .putString(SOURCES_KEY, value.toString()).commit();
+        if (saved) {
+            TRANSIENT_BOARDS.clear();
+            for (ImageBoardClient.Board board : boards) TRANSIENT_BOARDS.put(token(board), board);
+        }
+        return saved;
     }
 
     static boolean ensureBbsMenuRegistered(Context context) {

@@ -6,9 +6,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 final class AdvancedNgMatcherTest {
+    @Test
+    void numericAndTimeConditionsAcceptFullwidthDigits() {
+        AdvancedNgMatcher.Context context = new AdvancedNgMatcher.Context();
+        context.number = 88;
+        context.date = "2026/10/11(日) 21:30:00";
+        context.timestampMillis = AdvancedNgMatcher.parseTimestamp(context.date);
+        assertTrue(AdvancedNgMatcher.matches(condition("numeric", "resNumber", "between",
+                "８０", "９０", false), context));
+        assertTrue(AdvancedNgMatcher.matches(condition("time", "weekday", "eq",
+                "０", "", false), context));
+        context.body = "ＡＢＣ";
+        assertTrue(AdvancedNgMatcher.matches(condition("text", "body", "contains", "ＡＢＣ", "", false), context));
+        assertFalse(AdvancedNgMatcher.matches(condition("text", "body", "contains", "ABC", "", false), context));
+    }
+
+    @Test
+    void normalizesLocalizedNumericInputWithoutChangingStoredTextConditions() {
+        Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.FRANCE);
+            assertEquals("-1.25", AdvancedNgMatcher.normalizeNumber("−１，２５"));
+            Locale.setDefault(Locale.forLanguageTag("ar"));
+            assertEquals("-12.5", AdvancedNgMatcher.normalizeNumber("\u061c-١٢٫٥"));
+            assertEquals("12", AdvancedNgMatcher.normalizeNumber("১২"));
+        } finally {
+            Locale.setDefault(original);
+        }
+    }
     @Test
     void combinesDifferentFieldsAndKeepsBoardAndThreadScopesDistinct() {
         AdvancedNgMatcher.Context context = new AdvancedNgMatcher.Context();

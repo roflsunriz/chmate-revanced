@@ -1,5 +1,33 @@
 # 検証手順
 
+## 2026-11-04: Issue #16 / v1.2.5
+
+- 対象は画像ビューアの終了、246 devの上部広告欄、画像掲示板の操作導線とsportschanの指定URL。接続端末はAQUOS SH-R80P / Android 16、Manager 2.6.0、ChMate 0.8.10.246 dev（versionCode 516）。利用者の明示承認後に候補APKをデータ保持更新した。
+- `clean :patches:test :extensions:chmate:test :extensions:chmate:lint :patches:buildAndroid`が成功。パッチ47件・拡張35件のJUnitはfailure/error/skip 0件。11言語の追加設定ラベルも空欄・nullがないことを確認した。
+- 最終実装のRVPをCLI 6.0.0で7世代へ適用し、各ログの対象patch成功、resource・DEX再構築、zipalign、署名済みAPKの保存を確認した。179と241は全split統合後のAPKを使った。下表はCLIへ渡した単一APKのSHA-256。
+
+| 版 | 入力APKのSHA-256 |
+| --- | --- |
+| 0.8.10.165 | `941f3267bc5cf8047d7d70565e4bf3d38153b821fedaee75f524edccbe72ec1c` |
+| 0.8.10.179 | `19bfca0b3a56e6ded76289d0da6e6ea2533c8847e01cb751c3d54460c7ad259c` |
+| 0.8.10.202 dev | `f9f7a4e08542638294fed5aec38422e036741d0d6b1d362ddefb89cfd3a128e3` |
+| 0.8.10.241 | `28b23765becf1abd27f27b7ac8a6222f5f878b327968df5340f0f076bf079b94` |
+| 0.8.10.244 dev | `b87329c36cd7a18660b14822ef5d104230bc798ac4e1bc84d6f67816863188b2` |
+| 0.8.10.245 dev | `23e968bc165a70305a29a9541edb8ca598ebb87c6f296820998c55f21396f985` |
+| 0.8.10.246 dev | `24112b044d1675abf41f38f8732ee41fba0a725e96b4add1303d4a82a6d82449` |
+
+- OSV-Scanner 2.7.0で3 lockfileを検査した。初回はGuavaのGHSA-xxph-c9ww-hj94が3つの依存解決結果で検出された。Guavaを33.8.0-jreへ更新し、Nettyの安定版4.2.20.Finalも取り込み、追加configurationを含めてlockを再生成した。最終の68 + 170 package（settings lockは0 package）はscanner exit 0かつJSON内の脆弱性0件。初回の短い進捗で0件とした報告は詳細JSONの確認不足であり、この再検査結果へ訂正する。根拠は[Guava公式アドバイザリー](https://github.com/google/guava/security/advisories/GHSA-xxph-c9ww-hj94)。
+- Managerでは公開v1.2.4と候補の同時登録で、拡張DEXとpatch本体が別版になることをpatch後DEXから確認した。公開版のChMate sourceを一時的に外してManagerを再起動し、候補だけで生成するとcore URL parser・広告View・画像Activityの修正がCLIと一致した。公開後は候補を除去して固定URLへ戻す。
+- sportschanの`/librejp/thread/16592.html`を「URLを開く」から読み込み、ChMate標準の「NicoCacheスレ」141レスと画像を表示した。診断ではDATのGETとHTTP 200（77,245 bytes）を確認した。元のAPI応答が正常でも、URL parserの未接続、port/HTTPの消失、外部板のHTTPS優先処理が重なると表示できない。画像掲示板のloopback URLだけを各処理へ接続して解消した。
+- 検証用RVPのSHA-256は`1d23d009888a528d8eb763da5188ae7c1c6f79274dc4a5fb76e5ba6485bc4790`。最終Manager保存APKは`d0c652682aadd3400c99e63959c61c5ad25351397620845d259e3493db679bef`、証明書SHA-256は既存インストールと同じ`cddbc1c44abb5b0bc4efab2b9e82291758db40409082c7dda55cd1d771459ab0`。診断用`ChMateQA`ログを製品から除去し、保存APKのDEXにも同文字列がないこと、core URL parser・URL生成・広告View・画像Activityの変更がCLI生成物と一致することを確認した。
+- 4chanの工作板`/po/`、ふたば料理板`dat.2chan.net/t`、jschan系のsportschan`/librejp/`とzzzchan`/tech/`で登録から一覧・本文・返信・画像表示を確認した。「板を開く」が暗黙Intentでは終了する問題を検出し、明示ActivityとURLのdataへ修正した。BBSMENU未更新の板も同buttonから開けた。zzzchanの`/tech/ Sticky`は3レス、別の公開スレッドは165レスを表示した。最終候補のzzzchan一覧応答はHTTP 200・143行で、CRと不正な分断行は0件だった。4chan・ふたばでも最終候補で一覧・スレッド・再取得を再確認した。
+- 上部広告は同じ5chの「NicoCache26」で比較した。元APKの広告Viewは`0,0-1260,159`でADG子Viewを持ったが、候補の同じViewは`GONE`・`0,0-0,0`となりSDK子Viewも生成されなかった。タイトルはstatus bar直下から幅全体に表示された。途中スクロールでも広告枠の追加高はなかった。toolbar更新、板一覧先頭の下引きとスレッド末尾の上引きで「離すと更新」および更新spinnerを確認した。
+- UI回帰検査ではホーム5tab・12menu、板一覧、スレッド一覧・本文、設定18項目と子画面、NG編集6tab、追加した3設定画面を開き、入力・選択・dialogの取消・保存・戻るを確認した。NG編集の5種類の追加dialogは取消し、画像NG tabには追加buttonがないため画像側menuを確認した。UAは既存値を維持した保存・再起動と編集取消を確認し、再起動前後のPIDが変わった。高度NGは文字列・数値範囲・曜日条件をdraftへ追加・編集し、親ruleは保存せず取消した。画像の共有先chooser、保存先dialog・folder pickerは取消し、回転は4回で戻した。投稿、購入、認証情報送信、既存NGや履歴の削除などの確定操作は実行していない。
+- 同一スレッドの開閉20回と連続/単体画像表示20回で、各回の対象Activityと同一PIDの生存を確認した。最終候補でもsportschanの板から同一スレッドを20回開閉した。検査直前にcrash bufferをclearし、検査後のChMate由来FATAL EXCEPTIONは0件。主要画面のscreenshot・UI hierarchy、回数別のActivity/PID記録はGit管理外の`output/qa/issue16/`へ保存した。246 devの通常UIで使う単体画像はImageListActivity内のoverlayで検査した。ImagesViewer2ActivityはDEX構造を確認し、165の本来のonPause処理も保持した。補助的な直接起動は自動承認審査に拒否されたため実行していない。
+- 追加画面をArabicのRTL・縦向き1260×2730・横向き2730×1260で確認し、横向きでもscroll後に保存・板を開くbuttonを操作できた。app localeは元の継承設定`[]`、回転は`lock 0`へ戻した。画像掲示板の保存内容は元のsportschanだけへ復元し、process再起動後も検証用3板が復活しないことを確認した。検査で切り替えた既存スイッチも検査前画面と照合して復元した。
+- 今回の実機はAQUOS / 246 devのみで、Pixel 10aと旧ChMate各版の実機UIは再検査していない。旧版は7世代のCLI適用と、165の画像ライフサイクル保持などのDEX照合で補った。端末既存のVPNを維持しており、このUI検査をpatch単独のpacket遮断検査の代用にはしていない。
+- 既存Gradle plugin 1.0.0-dev.11由来のGradle 10/11向け非推奨警告と、同pluginが使うSDK parserのversion警告は残る。現在の固定Gradle 9.8.2で品質ゲートは成功し、警告は抑制していない。将来のGradle major更新時は上流pluginの対応が必要。
+
 ## 2026-10-24: v1.2.0 画像掲示板・高度NG統合と並列更新
 
 - Pixel 10aへv1.2.3をインストール後、スレッドを開くと`ResListActivity.onStart(:727)`のNPEで断続的に終了することをcrash bufferで4件確認した。246 devのdecompile結果では`onStart`と`onResume`の成功経路がsuper呼出しだけで、内部counterの分岐がnull throw等へ入るため、v1.2.4で両ライフサイクルを直接superへ委譲する。

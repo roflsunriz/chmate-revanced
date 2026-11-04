@@ -13,6 +13,8 @@ class AdBlockerTest {
     @Test
     void blocksExactAndSubdomainHostsWithoutOvermatching() {
         assertTrue(AdBlocker.isBlockedHost("doubleclick.net"));
+        assertTrue(AdBlocker.isBlockedHost("d.socdm.com"));
+        assertFalse(AdBlocker.isBlockedHost("socdm.com"));
         assertTrue(AdBlocker.isBlockedHost("pagead2.googlesyndication.com."));
         assertFalse(AdBlocker.isBlockedHost("notdoubleclick.net"));
         assertFalse(AdBlocker.isBlockedHost("example.com"));

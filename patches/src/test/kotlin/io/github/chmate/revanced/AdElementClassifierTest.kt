@@ -13,6 +13,9 @@ class AdElementClassifierTest {
         assertTrue(AdElementClassifier.isAdSdkClass("Lcom/google/android/gms/internal/ads/zzclc;"))
         assertTrue(AdElementClassifier.isAdSdkClass("com.applovin.sdk.AppLovinSdk"))
         assertTrue(AdElementClassifier.isAdSdkClass("Lnet/nend/android/NendAdView;"))
+        assertTrue(AdElementClassifier.isAdSdkClass("Lcom/socdm/d/adgeneration/ADG;"))
+        assertTrue(AdElementClassifier.isAdSdkClass("Lcom/pubmatic/sdk/openwrap/banner/POBBannerView;"))
+        assertTrue(AdElementClassifier.isAdSdkClass("Lcom/vungle/ads/BannerAd;"))
     }
 
     @Test

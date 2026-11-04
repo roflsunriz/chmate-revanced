@@ -117,7 +117,17 @@ jobs:
           version="${{ needs.build.outputs.version }}"
           source="docs/release-notes/v$version.md"
           test -f "$source"
-          cp "$source" release-notes.md
+          {
+            printf '## 変更内容\n\n'
+            awk -v version="$version" '
+              index($0, "## [" version "]") == 1 { found=1; next }
+              found && /^## \[/ { exit }
+              found { print }
+              END { if (!found) exit 1 }
+            ' CHANGELOG.md
+            printf '\n'
+            cat "$source"
+          } > release-notes.md
           {
             printf '\n## 配布物の SHA-256\n\n```text\n'
             cat "release-assets/patches-$version.rvp.sha256"

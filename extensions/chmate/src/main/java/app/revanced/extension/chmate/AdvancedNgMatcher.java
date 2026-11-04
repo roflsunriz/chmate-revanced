@@ -4,11 +4,27 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Locale;
+import java.text.Normalizer;
+import java.text.DecimalFormatSymbols;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 final class AdvancedNgMatcher {
+    static String normalizeNumber(String value) {
+        String normalized = Normalizer.normalize(value.trim(), Normalizer.Form.NFKC).trim();
+        char decimal = DecimalFormatSymbols.getInstance(Locale.getDefault()).getDecimalSeparator();
+        StringBuilder result = new StringBuilder();
+        for (int index = 0; index < normalized.length(); index++) {
+            char current = normalized.charAt(index);
+            int digit = Character.digit(current, 10);
+            if (digit >= 0) result.append((char) ('0' + digit));
+            else if (current == decimal || current == '\u066b') result.append('.');
+            else if (current == '\u2212') result.append('-');
+            else if (Character.getType(current) != Character.FORMAT) result.append(current);
+        }
+        return result.toString();
+    }
     private static final Pattern DATE = Pattern.compile(
             "(?:20)?(\\d{2})/(\\d{1,2})/(\\d{1,2}).*?(\\d{1,2}):(\\d{2})(?::(\\d{2}))?");
     private static final Pattern URL = Pattern.compile("https?://[^\\s<>\"']+", Pattern.CASE_INSENSITIVE);
@@ -124,7 +140,7 @@ final class AdvancedNgMatcher {
     private static boolean numericMatches(AdvancedNgRule.Condition condition, double actual) {
         if (Double.isNaN(actual) || Double.isInfinite(actual)) return false;
         try {
-            double value = Double.parseDouble(condition.value);
+            double value = Double.parseDouble(normalizeNumber(condition.value));
             switch (condition.mode) {
                 case "eq": return actual == value;
                 case "gte": return actual >= value;
@@ -132,7 +148,7 @@ final class AdvancedNgMatcher {
                 case "gt": return actual > value;
                 case "lt": return actual < value;
                 case "between":
-                    return actual >= value && actual <= Double.parseDouble(condition.second);
+                    return actual >= value && actual <= Double.parseDouble(normalizeNumber(condition.second));
                 default: return false;
             }
         } catch (NumberFormatException ignored) {
@@ -145,7 +161,7 @@ final class AdvancedNgMatcher {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(timestamp);
         try {
-            int value = Integer.parseInt(condition.value);
+            int value = Integer.parseInt(normalizeNumber(condition.value));
             switch (condition.field) {
                 case "weekday": return calendar.get(Calendar.DAY_OF_WEEK) - 1 == value;
                 case "hour": return calendar.get(Calendar.HOUR_OF_DAY) == value;

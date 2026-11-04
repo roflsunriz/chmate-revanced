@@ -7,12 +7,14 @@ import app.revanced.patcher.firstMethod
 import app.revanced.patcher.patch.BytecodePatchContext
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ThreeRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
+import com.android.tools.smali.dexlib2.iface.Method
 
 private const val REQUEST_WINDOW_FEATURE =
     "Landroid/app/Activity;->requestWindowFeature(I)Z"
@@ -56,6 +58,8 @@ internal fun BytecodePatchContext.patchIntegrityChecks() {
 internal val lifecycleIntegrityClassTypes = setOf(
     "Ljp/syoboi/a2chMate/activity/BoardList2Activity;",
     "Ljp/syoboi/a2chMate/activity/HomeActivity;",
+    "Ljp/syoboi/a2chMate/activity/ImagesViewer2Activity;",
+    "Ljp/syoboi/a2chMate/activity/ImageListActivity;",
     "Ljp/syoboi/a2chMate/activity/ResListActivity;",
     "Ljp/syoboi/a2chMate/activity/ResEditActivity;",
     "Ljp/syoboi/a2chMate/activity/SearchActivity;",
@@ -76,10 +80,25 @@ private fun BytecodePatchContext.patchActivityLifecycleIntegrity() {
     classDefs.filter { it.type in lifecycleIntegrityClassTypes }.forEach { classDef ->
         val superType = classDef.superclass
         classDef.methods.filter { method ->
-            method.name in setOf("onStart", "onResume", "onPause") &&
-                method.parameterTypes.isEmpty() && method.returnType == "V" &&
-                method.instructionsOrNull?.toList().orEmpty().let { instructions ->
-                    instructions.any { it.opcode in lifecycleTrapOpcodes } &&
+            val isLifecycle = method.name in setOf("onStart", "onResume", "onPause") &&
+                method.parameterTypes.isEmpty()
+            val isImageContext = classDef.type in setOf(
+                "Ljp/syoboi/a2chMate/activity/ImagesViewer2Activity;",
+                "Ljp/syoboi/a2chMate/activity/ImageListActivity;",
+            ) && method.name == "attachBaseContext" &&
+                method.parameterTypes.map(CharSequence::toString) == listOf("Landroid/content/Context;")
+            (isLifecycle || isImageContext) && method.returnType == "V" &&
+                (if (classDef.type == "Ljp/syoboi/a2chMate/activity/ImageListActivity;") {
+                    lifecycleInstructions(method, classDef.methods.toList())
+                } else method.instructionsOrNull?.toList().orEmpty()).let { instructions ->
+                    // The newly covered image screens must also contain the obfuscator's
+                    // modulo-128 counter, so ordinary older lifecycle work is retained.
+                    val isImage = classDef.type.endsWith("/ImageListActivity;") ||
+                        classDef.type.endsWith("/ImagesViewer2Activity;")
+                    (!isImage || instructions.any { instruction ->
+                        instruction.opcode == Opcode.REM_INT_LIT16 &&
+                            (instruction as? NarrowLiteralInstruction)?.narrowLiteral == 128
+                    }) && instructions.any { it.opcode in lifecycleTrapOpcodes } &&
                         instructions.any { instruction ->
                             if (instruction.opcode !in setOf(Opcode.INVOKE_SUPER, Opcode.INVOKE_SUPER_RANGE)) {
                                 return@any false
@@ -89,15 +108,39 @@ private fun BytecodePatchContext.patchActivityLifecycleIntegrity() {
                         }
                 }
         }.forEach { method ->
+            val contextParameter = method.parameterTypes.isNotEmpty()
+            val registers = if (contextParameter) "p0, p1" else "p0"
+            val parameters = method.parameterTypes.joinToString("")
             firstMethod(method).addInstructions(
                 0,
                 """
-                    invoke-super {p0}, $superType->${method.name}()V
+                    invoke-super {$registers}, $superType->${method.name}($parameters)V
                     return-void
                 """.trimIndent(),
             )
         }
     }
+}
+
+// Some obfuscators move a lifecycle body into same-class dispatch/helper methods.
+// Follow only those calls, with a visited set so recursive dispatchers terminate.
+internal fun lifecycleInstructions(entry: Method, siblings: List<Method>): List<Instruction> {
+    val visited = mutableSetOf<String>()
+    fun collect(method: Method): List<Instruction> {
+        val key = method.toString()
+        if (!visited.add(key)) return emptyList()
+        val instructions = method.instructionsOrNull?.toList().orEmpty()
+        return instructions + instructions.flatMap { instruction ->
+            val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+            val target = siblings.firstOrNull { candidate ->
+                reference != null && reference.definingClass == entry.definingClass &&
+                    candidate.name == reference.name && candidate.returnType == reference.returnType &&
+                    candidate.parameterTypes == reference.parameterTypes
+            }
+            target?.let(::collect).orEmpty()
+        }
+    }
+    return collect(entry)
 }
 
 private data class IntegrityPatchIndices(

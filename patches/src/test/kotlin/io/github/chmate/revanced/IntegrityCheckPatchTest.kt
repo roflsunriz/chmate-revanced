@@ -1,6 +1,14 @@
 package io.github.chmate.revanced
 
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction10x
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction11x
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction35c
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -8,6 +16,26 @@ import org.junit.jupiter.api.Test
 class IntegrityCheckPatchTest {
     private val firstRead = IntegrityArrayRead(10, 12, resultRegister = 2, sourceRegister = 3)
     private val secondRead = IntegrityArrayRead(14, 16, resultRegister = 5, sourceRegister = 3)
+
+    @Test
+    fun `follows same class lifecycle dispatchers and terminates recursive calls`() {
+        val owner = "Lsample/ImageActivity;"
+        fun call(type: String, name: String) = ImmutableInstruction35c(
+            Opcode.INVOKE_STATIC, 0, 0, 0, 0, 0, 0,
+            ImmutableMethodReference(type, name, emptyList<String>(), "V"),
+        )
+        fun method(name: String, instructions: List<ImmutableInstruction>) = ImmutableMethod(
+            owner, name, emptyList(), "V", 0, emptySet(), emptySet(),
+            ImmutableMethodImplementation(1, instructions, emptyList(), emptyList()),
+        )
+        val entry = method("onResume", listOf(call(owner, "dispatch"), ImmutableInstruction10x(Opcode.RETURN_VOID)))
+        val helper = method("dispatch", listOf(call(owner, "dispatch"), ImmutableInstruction11x(Opcode.THROW, 0)))
+        val collected = lifecycleInstructions(entry, listOf(entry, helper))
+        assertTrue(hasLifecycleTrapOpcode(collected.map { it.opcode }))
+        assertEquals(4, collected.size)
+        val foreignEntry = method("onResume", listOf(call("Lforeign/Activity;", "dispatch")))
+        assertFalse(hasLifecycleTrapOpcode(lifecycleInstructions(foreignEntry, listOf(helper)).map { it.opcode }))
+    }
 
     @Test
     fun `detects integrity comparison with an interleaved array index constant`() {
@@ -18,6 +46,8 @@ class IntegrityCheckPatchTest {
     fun `patches board and response list lifecycle integrity classes`() {
         assertTrue("Ljp/syoboi/a2chMate/activity/BoardList2Activity;" in lifecycleIntegrityClassTypes)
         assertTrue("Ljp/syoboi/a2chMate/activity/HomeActivity;" in lifecycleIntegrityClassTypes)
+        assertTrue("Ljp/syoboi/a2chMate/activity/ImagesViewer2Activity;" in lifecycleIntegrityClassTypes)
+        assertTrue("Ljp/syoboi/a2chMate/activity/ImageListActivity;" in lifecycleIntegrityClassTypes)
         assertTrue("Ljp/syoboi/a2chMate/activity/ResListActivity;" in lifecycleIntegrityClassTypes)
         assertTrue("Ljp/syoboi/a2chMate/activity/ResEditActivity;" in lifecycleIntegrityClassTypes)
         assertTrue("Ljp/syoboi/a2chMate/activity/SearchActivity;" in lifecycleIntegrityClassTypes)

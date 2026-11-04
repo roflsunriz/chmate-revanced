@@ -1,9 +1,13 @@
 package app.revanced.extension.chmate;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Typeface;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.ViewGroup;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -18,10 +22,13 @@ import java.util.List;
 public final class ImageBoardSourcesActivity extends Activity {
     private EditText sources;
     private IntegrationStrings strings;
+    private LinearLayout boardButtons;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        getWindow().setStatusBarColor(Color.WHITE);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         RuntimeState.initialize(this);
         ImageBoardIntegration.initialize(this);
         strings = IntegrationStrings.current();
@@ -63,6 +70,10 @@ public final class ImageBoardSourcesActivity extends Activity {
         save.setAllCaps(false);
         save.setOnClickListener(view -> save());
         content.addView(save, matchWrap());
+        boardButtons = new LinearLayout(this);
+        boardButtons.setOrientation(LinearLayout.VERTICAL);
+        content.addView(boardButtons, matchWrap());
+        refreshBoardButtons();
         ScrollView scroll = new ScrollView(this);
         scroll.addView(content);
         setContentView(scroll);
@@ -89,12 +100,32 @@ public final class ImageBoardSourcesActivity extends Activity {
             Toast.makeText(this, SettingsStrings.current().saveFailed, Toast.LENGTH_LONG).show();
             return;
         }
+        refreshBoardButtons();
         if (!ImageBoardIntegration.ensureBbsMenuRegistered(this)) {
             Toast.makeText(this, strings.noBbsMenuSlot, Toast.LENGTH_LONG).show();
             return;
         }
         ImageBoardProxyServer.start(this);
         Toast.makeText(this, strings.saved, Toast.LENGTH_SHORT).show();
+    }
+
+    private void refreshBoardButtons() {
+        boardButtons.removeAllViews();
+        for (ImageBoardClient.Board board : ImageBoardIntegration.configuredBoards(this)) {
+            Button open = new Button(this);
+            open.setAllCaps(false);
+            open.setText(strings.openBoard() + ": " + board.host + "/" + board.code);
+            open.setOnClickListener(view -> {
+                String url = ImageBoardIntegration.rewriteInputUrl(board.pageUrl);
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                // Native intent filters accept known HTTPS boards only. The internal
+                // loopback board needs the same explicit destination as the board list.
+                intent.setClassName(getPackageName(),
+                        "jp.syoboi.a2chMate.activity.ThreadListActivity");
+                startActivity(intent);
+            });
+            boardButtons.addView(open, matchWrap());
+        }
     }
 
     private LinearLayout.LayoutParams matchWrap() {

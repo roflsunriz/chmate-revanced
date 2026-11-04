@@ -236,6 +236,10 @@ public final class AdvancedNgActivity extends Activity {
         form.addView(value, matchWrap());
         EditText second = input(ja("範囲の終点（範囲指定時）", "Range end (for between)"),
                 original == null ? "" : original.second, false);
+        second.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
+                | android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
+                | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        configureConditionInput(value, initialType);
         form.addView(second, matchWrap());
         second.setVisibility(initialType.equals("numeric") ? View.VISIBLE : View.GONE);
         CheckBox negate = check(ja("条件を反転", "Negate"), original != null && original.negate);
@@ -248,6 +252,7 @@ public final class AdvancedNgActivity extends Activity {
             @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view,
                     int position, long id) {
                 String selected = selectedValue(type);
+                configureConditionInput(value, selected);
                 String previousField = selectedValue(field);
                 String previousMode = selectedValue(mode);
                 String[] fields = selected.equals("numeric") ? NUMERIC_FIELDS
@@ -273,6 +278,10 @@ public final class AdvancedNgActivity extends Activity {
                     String modeValue = selectedValue(mode);
                     String valueText = value.getText().toString().trim();
                     String secondText = second.getText().toString().trim();
+                    if (!typeValue.equals("text")) {
+                        valueText = AdvancedNgMatcher.normalizeNumber(valueText);
+                        secondText = AdvancedNgMatcher.normalizeNumber(secondText);
+                    }
                     if (!validCondition(typeValue, fieldValue, modeValue, valueText, secondText)) {
                         value.setError(ja("条件の値を確認してください", "Check condition value"));
                         return;
@@ -285,6 +294,13 @@ public final class AdvancedNgActivity extends Activity {
                     dialog.dismiss();
                 }));
         dialog.show();
+    }
+
+    private static void configureConditionInput(EditText value, String type) {
+        value.setInputType(type.equals("text")
+                ? android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                : android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
+                    | (type.equals("numeric") ? android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL : 0));
     }
 
     private boolean validCondition(String type, String field, String mode,
