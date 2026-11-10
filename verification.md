@@ -1,5 +1,11 @@
 # 検証手順
 
+## 2026-11-10: README本文と配布情報の整備
+
+- 登録用URLをraw.githubusercontent.comへ統一し、patches.jsonのversionとdownload_urlを現在の公開リリース資産と照合した。
+- release workflowはactionlintとShellCheckに合格した。JSON同期処理は、既存ファイル更新、新規作成、旧リリースの除外、版不一致、最新リリースの変更、書込み競合の6ケースを模擬APIで確認した。
+- 今回は文書と配布メタデータの変更で、アプリ本体のビルド・端末への適用・新規リリースは実施していない。
+
 ## 2026-11-04: Issue #16 / v1.2.5
 
 - 対象は画像ビューアの終了、246 devの上部広告欄、画像掲示板の操作導線とsportschanの指定URL。接続端末はAQUOS SH-R80P / Android 16、Manager 2.6.0、ChMate 0.8.10.246 dev（versionCode 516）。利用者の明示承認後に候補APKをデータ保持更新した。

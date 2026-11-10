@@ -1,5 +1,7 @@
 # 調査知見
 
+- Manager登録用のraw URLは既定ブランチ直下の `patches.json` を読む。release workflowの最後で、最新リリースのJSONだけを同ブランチへ同期する。旧リリース再実行は更新対象外で、JSONの版と現在のblob SHAを検証するため、URLだけを変更してJSON配置・同期を省略しない。
+
 - JUnit Jupiterとlauncherは同時更新する。通常taskだけでは未実行configurationのlockが古いまま残るため、追加lock解決taskも実行し、3 lockfileを監査する。
 - 難読化名やversion番号をfingerprintに使わず、引数型・戻り型・呼出し命令・`onMeasure/onLayout` などの構造を複数世代で照合する。別patchが先にmethodを可変化した場合は元descriptorでなく可変実装からlabelを取る。
 - ReVanced CLIは個別patch失敗でも成果物を保存しexit 0になることがある。APKの存在や終了codeでなく、対象patchの `succeeded` logとpatch後DEXを確認する。

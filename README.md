@@ -45,7 +45,7 @@ ChMateの「URLを開く」へ元のスレッドURLを入力することもで�
 [GitHub Releases](https://github.com/roflsunriz/chmate-revanced/releases) で配布しています。ReVanced Manager で更新を追従する場合は、Patches 画面の追加操作から「URLを入力」を選び、次の固定 URL を登録してください。
 
 ```text
-https://github.com/roflsunriz/chmate-revanced/releases/latest/download/patches.json
+https://raw.githubusercontent.com/roflsunriz/chmate-revanced/main/patches.json
 ```
 
 手動で追加する場合は `patches-<version>.rvp` をダウンロードし、「ストレージから選択」で `.rvp` をそのまま読み込みます。ZIP への展開は不要です。
@@ -111,6 +111,8 @@ ChMate APK や patch 済み APK はこのリポジトリで配布しません。
 GPL-3.0-only。詳細は [LICENSE](LICENSE) を参照してください。
 
 ## 依存更新の自動処理
+
+更新PRの取り込みは、必要なCIチェックにすべて成功したものだけを対象に、毎月28日18:00（Asia/Tokyo）の月末処理で行います。
 
 Dependabotの更新確認と自動マージは毎月28日（Asia/Tokyo）にまとめます。成功したCIと対象commitを確認して取り込み、失敗時は修正して再検証します。手順は[更新手順](how-to-update.md#dependabot-pr-の更新)を参照してください。
 
